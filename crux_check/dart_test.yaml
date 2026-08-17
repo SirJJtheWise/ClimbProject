@@ -1,0 +1,9 @@
+# The `preview` tag marks golden renders used to review the design as
+# images. They are machine-specific (font rasterization differs across
+# hosts) so they are excluded from the default `flutter test` run.
+# Regenerate deliberately:
+#
+#     flutter test --tags preview --update-goldens
+tags:
+  preview:
+    skip: "run with --tags preview"
