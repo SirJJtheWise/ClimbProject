@@ -30,7 +30,8 @@ class LevelBar extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: '$label, ${band.label}, ${percentile.round()}th percentile'
+      label:
+          '$label, ${band.label}, ${percentile.round()}th percentile'
           '${trailingText == null ? '' : ', $trailingText'}',
       excludeSemantics: true,
       child: Padding(
@@ -44,8 +45,9 @@ class LevelBar extends StatelessWidget {
                   child: Text(
                     label,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -53,8 +55,10 @@ class LevelBar extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   trailingText ?? '${percentile.round()}th pct',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: color, fontWeight: FontWeight.w700),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),

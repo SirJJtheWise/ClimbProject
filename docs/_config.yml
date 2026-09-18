@@ -1,0 +1,5 @@
+# GitHub Pages builds this folder with Jekyll. Only `docs/` is published; the
+# app source in the repo is not part of the site.
+title: Crux Check
+description: Bouldering grade estimator
+theme: jekyll-theme-minimal

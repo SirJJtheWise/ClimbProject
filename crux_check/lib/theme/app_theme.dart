@@ -286,8 +286,9 @@ class AppTheme {
           final selected = states.contains(WidgetState.selected);
           return textTheme.labelMedium?.copyWith(
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color:
-                selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+            color: selected
+                ? colorScheme.onSurface
+                : colorScheme.onSurfaceVariant,
           );
         }),
       ),
@@ -326,10 +327,16 @@ class AppTheme {
         linearTrackColor: colorScheme.surfaceContainerHighest,
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? colorScheme.onPrimary : null),
-        trackColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? colorScheme.primary : null),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? colorScheme.onPrimary
+              : null,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? colorScheme.primary
+              : null,
+        ),
       ),
     );
   }
@@ -344,27 +351,34 @@ class AppTheme {
     return base
         .copyWith(
           displayLarge: base.displayLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1.5,
-              fontFeatures: tabular),
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1.5,
+            fontFeatures: tabular,
+          ),
           displayMedium: base.displayMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
-              fontFeatures: tabular),
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1,
+            fontFeatures: tabular,
+          ),
           displaySmall: base.displaySmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.8,
-              fontFeatures: tabular),
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.8,
+            fontFeatures: tabular,
+          ),
           headlineMedium: base.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-              fontFeatures: tabular),
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+            fontFeatures: tabular,
+          ),
           headlineSmall: base.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
-              fontFeatures: tabular),
-          titleLarge: base.titleLarge
-              ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.2),
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+            fontFeatures: tabular,
+          ),
+          titleLarge: base.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+          ),
           titleMedium: base.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           titleSmall: base.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           bodyLarge: base.bodyLarge?.copyWith(height: 1.45),
@@ -372,8 +386,10 @@ class AppTheme {
           bodySmall: base.bodySmall?.copyWith(height: 1.4),
           labelLarge: base.labelLarge?.copyWith(fontWeight: FontWeight.w600),
           labelMedium: base.labelMedium?.copyWith(fontWeight: FontWeight.w600),
-          labelSmall: base.labelSmall
-              ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.5),
+          labelSmall: base.labelSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+          ),
         )
         .apply(
           bodyColor: colorScheme.onSurface,

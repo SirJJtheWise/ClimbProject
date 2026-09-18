@@ -1,6 +1,8 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' show join;
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import '../models/assessment.dart';
@@ -22,7 +24,7 @@ class DbHelper {
 
   /// Bump this whenever a stored value changes meaning, and handle it in
   /// [_onUpgrade].
-  static const int _schemaVersion = 2;
+  static const int _schemaVersion = 3;
 
   Future<Database> _open() async {
     if (kIsWeb) {
@@ -35,6 +37,10 @@ class DbHelper {
           onUpgrade: _onUpgrade,
         ),
       );
+    }
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
     }
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'crux_check.db');
@@ -61,9 +67,63 @@ class DbHelper {
         whereArgs: [MetricId.powerEndurance.name],
       );
     }
+    // v3: app-level settings that exist before a profile does — currently
+    // just which version of the safety disclaimer has been accepted. An
+    // existing install has accepted nothing, so the absent row correctly
+    // means "show the disclaimer on next launch".
+    if (oldVersion < 3) {
+      await db.execute(_appMetaTable);
+    }
   }
 
+  /// Empties every table, returning the install to its first-launch state.
+  ///
+  /// Wipes `app_meta` too, so the safety notice is presented again — a reset
+  /// that left a stale acceptance behind would be claiming the user agreed to
+  /// something in a state that no longer exists.
+  Future<void> deleteAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final table in const [
+        'assessments',
+        'test_results',
+        'body_measurements',
+        'users',
+        'app_meta',
+      ]) {
+        await txn.delete(table);
+      }
+    });
+  }
+
+  Future<String?> getMeta(String key) async {
+    final db = await database;
+    final rows = await db.query(
+      'app_meta',
+      where: 'key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first['value'] as String;
+  }
+
+  Future<void> setMeta(String key, String value) async {
+    final db = await database;
+    await db.insert('app_meta', {
+      'key': key,
+      'value': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static const String _appMetaTable = '''
+      CREATE TABLE app_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''';
+
   Future<void> _onCreate(Database db, int version) async {
+    await db.execute(_appMetaTable);
     await db.execute('''
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -123,7 +183,12 @@ class DbHelper {
     if (user.id == null) {
       return db.insert('users', user.toMap()..remove('id'));
     }
-    await db.update('users', user.toMap(), where: 'id = ?', whereArgs: [user.id]);
+    await db.update(
+      'users',
+      user.toMap(),
+      where: 'id = ?',
+      whereArgs: [user.id],
+    );
     return user.id!;
   }
 
@@ -183,7 +248,8 @@ class DbHelper {
     );
     final latest = <MetricId, TestResult>{};
     for (final row in rows) {
-      final result = TestResult.fromMap(row);
+      final result = TestResult.tryFromMap(row);
+      if (result == null) continue; // metric removed since the row was written
       latest[result.metricId] = result; // later rows overwrite earlier ones
     }
     return latest;

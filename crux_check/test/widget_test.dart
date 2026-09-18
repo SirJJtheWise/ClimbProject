@@ -11,8 +11,9 @@ import 'package:crux_check/state/app_state.dart';
 // environment). Instead we build the same provider/router shape around a
 // fresh, unloaded AppState to exercise the loading UI in isolation.
 void main() {
-  testWidgets('root router shows a loading indicator before the DB loads',
-      (tester) async {
+  testWidgets('root router shows a loading indicator before the DB loads', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => AppState(),

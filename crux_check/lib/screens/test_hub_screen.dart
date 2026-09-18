@@ -72,7 +72,10 @@ class TestHubScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Test hub'),
-        actions: const [ProfileButton(), SizedBox(width: AppSpacing.xs)],
+        actions: const [
+          ProfileButton(),
+          SizedBox(width: AppSpacing.xs),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -89,6 +92,7 @@ class TestHubScreen extends StatelessWidget {
             LiveGradePreview(
               preview: preview,
               hasAnyTest: state.latestResults.isNotEmpty,
+              gradeScale: state.user?.gradeScalePref ?? GradeScale.v,
             ),
             for (final group in MetricGroup.values)
               if (grouped[group] != null) ...[
@@ -107,11 +111,10 @@ class TestHubScreen extends StatelessWidget {
                     onTest: def.id == MetricId.apeIndex
                         ? () => showProtocolSheet(context, def)
                         : () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    TestInputScreen(metricId: def.id),
-                              ),
+                            MaterialPageRoute(
+                              builder: (_) => TestInputScreen(metricId: def.id),
                             ),
+                          ),
                     onHowTo: () => showProtocolSheet(context, def),
                   ),
               ],
@@ -146,14 +149,16 @@ class _CoverageBar extends StatelessWidget {
               Expanded(
                 child: Text(
                   '$tested of $total tests recorded',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: scheme.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               Text(
                 '${(tested / total * 100).round()}%',
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -197,7 +202,11 @@ class _SectionHeading extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xs, AppSpacing.xl, AppSpacing.xs, AppSpacing.md),
+        AppSpacing.xs,
+        AppSpacing.xl,
+        AppSpacing.xs,
+        AppSpacing.md,
+      ),
       child: Row(
         children: [
           Expanded(

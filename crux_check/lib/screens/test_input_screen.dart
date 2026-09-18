@@ -13,27 +13,25 @@ import '../widgets/load_calculator.dart';
 import '../widgets/protocol_sheet.dart';
 
 /// Metrics recorded as %BW via the load calculator.
-const _loadBasedMetrics = {
-  MetricId.fingerStrength,
-  MetricId.pullingStrength,
-  MetricId.edgeTolerance,
-  MetricId.fingerEndurance,
-};
+const _loadBasedMetrics = {MetricId.fingerStrength, MetricId.pullingStrength};
+
+/// Hangboard edge depths, in mm, offered for the min-edge result. Hangboards
+/// come with discrete edges, so this is a picker rather than a free decimal —
+/// nobody owns a 13.4 mm edge.
+const _edgeSizesMm = [20, 18, 15, 14, 12, 10, 8, 6];
 
 /// Metrics whose protocol is a single continuous hold, so the built-in
 /// stopwatch is the right instrument. Power-endurance deliberately is not
 /// here: it is a board max-moves test now, and a stopwatch cannot run a
 /// counted-move protocol.
-const _timedMetrics = {
-  MetricId.lockOff,
-};
+const _timedMetrics = {MetricId.lockOff};
 
-/// Load-based metrics that hang on an edge, so the edge-size and grip
-/// selectors apply and a 7-second target is meaningful.
-const _sevenSecondHangMetrics = {
-  MetricId.fingerStrength,
-  MetricId.edgeTolerance,
-};
+/// Load-based metrics that hang on a fixed 20 mm edge, so the grip selector
+/// applies and the protocol note names a fixed hold time. Timing itself
+/// isn't done in-app — you can't hold a hang and operate the phone at the
+/// same time — so this only gates the grip picker and the note text, not a
+/// stopwatch.
+const _sevenSecondHangMetrics = {MetricId.fingerStrength};
 
 /// Human-readable grip names. The enum values are camelCase identifiers;
 /// showing them raw in a dropdown reads as a leaked implementation detail.
@@ -75,12 +73,13 @@ class _TestInputScreenState extends State<TestInputScreen> {
   double _pctBW = 0;
   double _bodyWeightKg = 0;
   double _addedLoadKg = 0;
-  double _edgeSizeMm = 20;
+  final double _edgeSizeMm = 20;
   GripType _gripType = GripType.halfCrimp;
 
   // Discrete pickers
   int _rungReached = 4;
   int _coreLevel = 3;
+  int _minEdgeMm = 14;
 
   // Timed / numeric
   final _numberController = TextEditingController();
@@ -137,6 +136,15 @@ class _TestInputScreenState extends State<TestInputScreen> {
           metricId: MetricId.core,
           rawValue: _coreLevel.toDouble(),
           unit: 'level (0-9)',
+          hitTrueMax: _hitTrueMax,
+        );
+      } else if (widget.metricId == MetricId.minEdge) {
+        await appState.saveTestResult(
+          metricId: MetricId.minEdge,
+          rawValue: _minEdgeMm.toDouble(),
+          unit: 'mm',
+          edgeSizeMm: _minEdgeMm.toDouble(),
+          gripType: _gripType,
           hitTrueMax: _hitTrueMax,
         );
       } else if (widget.metricId == MetricId.explosivePower) {
@@ -214,7 +222,9 @@ class _TestInputScreenState extends State<TestInputScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildBody(BuildContext context, MetricDef def) {
@@ -284,6 +294,41 @@ class _TestInputScreenState extends State<TestInputScreen> {
       );
     }
 
+    // Bodyweight only, so no load calculator — the result is which edge the
+    // hangboard has, picked from the depths hangboards actually come in.
+    if (widget.metricId == MetricId.minEdge) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<GripType>(
+            initialValue: _gripType,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Grip'),
+            items: GripType.values
+                .map(
+                  (g) =>
+                      DropdownMenuItem(value: g, child: Text(_gripLabels[g]!)),
+                )
+                .toList(),
+            onChanged: (v) =>
+                setState(() => _gripType = v ?? GripType.halfCrimp),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          _MinEdgePicker(
+            value: _minEdgeMm,
+            onChanged: (v) => setState(() => _minEdgeMm = v),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const _ProtocolNote(
+            icon: Icons.fitness_center_outlined,
+            text:
+                'Bodyweight only — no plates, no assistance. Smaller edge is '
+                'a stronger result.',
+          ),
+        ],
+      );
+    }
+
     // Two measurements, because the recorded value is the difference.
     if (widget.metricId == MetricId.explosivePower) {
       return _DerivedTwoFieldInput(
@@ -332,51 +377,33 @@ class _TestInputScreenState extends State<TestInputScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (isEdgeHang) ...[
-            const HangTimer(targetSeconds: 7),
-            const SizedBox(height: AppSpacing.xl),
-            // Stacked, not side by side: at 320-400dp two dropdowns in a row
-            // leave ~114dp each, which "Half crimp" overflows. Full-width
-            // also lets the grip names stay readable rather than abbreviated.
-            DropdownButtonFormField<double>(
-              initialValue: _edgeSizeMm,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Edge size'),
-              items: const [8, 10, 14, 20, 25]
-                  .map((mm) => DropdownMenuItem(
-                        value: mm.toDouble(),
-                        child: Text('$mm mm'),
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() => _edgeSizeMm = v ?? 20),
-            ),
-            const SizedBox(height: AppSpacing.lg),
             DropdownButtonFormField<GripType>(
               initialValue: _gripType,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Grip'),
               items: GripType.values
-                  .map((g) => DropdownMenuItem(
-                        value: g,
-                        child: Text(_gripLabels[g]!),
-                      ))
+                  .map(
+                    (g) => DropdownMenuItem(
+                      value: g,
+                      child: Text(_gripLabels[g]!),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) =>
                   setState(() => _gripType = v ?? GripType.halfCrimp),
             ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-          if (widget.metricId == MetricId.fingerEndurance)
-            // The 4-minute 7:3 protocol needs an interval timer, which the
-            // built-in single-shot stopwatch cannot provide — so say that
-            // plainly instead of offering the wrong instrument.
+            const SizedBox(height: AppSpacing.lg),
+            // Timing the hold happens off-app — you can't hang on and
+            // operate the phone at once — so this just states the target
+            // instead of offering a stopwatch you can't reach.
             const _ProtocolNote(
               icon: Icons.timer_outlined,
-              text: 'Run a 7 s on / 3 s off interval timer for 4 minutes, then '
-                  'enter the load you were still holding in the last 30 '
-                  'seconds.',
+              text:
+                  'Hold for 7 seconds on the 20 mm edge, then enter the max '
+                  'load you held below.',
             ),
-          if (widget.metricId == MetricId.fingerEndurance)
             const SizedBox(height: AppSpacing.xl),
+          ],
           LoadCalculator(
             initialBodyWeightKg: appState.latestBody?.weightKg ?? 0,
             onChanged: (pct, bw, added) {
@@ -422,7 +449,8 @@ class _TestInputScreenState extends State<TestInputScreen> {
   @override
   Widget build(BuildContext context) {
     final def = MetricDefinitions.all[widget.metricId]!;
-    final needsConfidenceToggle = widget.metricId != MetricId.bodyComposition &&
+    final needsConfidenceToggle =
+        widget.metricId != MetricId.bodyComposition &&
         widget.metricId != MetricId.experience;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -450,9 +478,12 @@ class _TestInputScreenState extends State<TestInputScreen> {
           children: [
             Text(
               def.summary,
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
+            const SizedBox(height: AppSpacing.lg),
+            _SafetyBanner(note: def.safetyNote),
             const SizedBox(height: AppSpacing.lg),
             _ProtocolSteps(def: def),
             const SizedBox(height: AppSpacing.xl),
@@ -464,8 +495,9 @@ class _TestInputScreenState extends State<TestInputScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Did you hit a true max?'),
                 subtitle: const Text(
-                    'Turn off if you think you had more in the tank — '
-                    'widens your confidence range'),
+                  'Turn off if you think you had more in the tank — '
+                  'widens your confidence range',
+                ),
                 value: _hitTrueMax,
                 onChanged: (v) => setState(() => _hitTrueMax = v),
               ),
@@ -523,8 +555,12 @@ class _ProtocolStepsState extends State<_ProtocolSteps> {
           InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md,
-                  AppSpacing.md, AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -549,7 +585,11 @@ class _ProtocolStepsState extends State<_ProtocolSteps> {
           if (_expanded)
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -561,9 +601,10 @@ class _ProtocolStepsState extends State<_ProtocolSteps> {
                   for (var i = 0; i < widget.def.steps.length; i++)
                     Padding(
                       padding: EdgeInsets.only(
-                          bottom: i == widget.def.steps.length - 1
-                              ? 0
-                              : AppSpacing.md),
+                        bottom: i == widget.def.steps.length - 1
+                            ? 0
+                            : AppSpacing.md,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -571,13 +612,16 @@ class _ProtocolStepsState extends State<_ProtocolSteps> {
                             width: 20,
                             child: Text(
                               '${i + 1}.',
-                              style: theme.textTheme.labelMedium
-                                  ?.copyWith(color: scheme.primary),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: scheme.primary,
+                              ),
                             ),
                           ),
                           Expanded(
-                            child: Text(widget.def.steps[i],
-                                style: theme.textTheme.bodySmall),
+                            child: Text(
+                              widget.def.steps[i],
+                              style: theme.textTheme.bodySmall,
+                            ),
                           ),
                         ],
                       ),
@@ -612,11 +656,57 @@ class _ProtocolNote extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The test's own safety note, on the screen rather than behind the ⓘ.
+///
+/// It used to live only in the protocol sheet, which meant the warning was
+/// one tap away from the person about to load their fingers to failure — and
+/// the people most likely to skip that tap are exactly the ones who have done
+/// the test before and stopped reading.
+class _SafetyBanner extends StatelessWidget {
+  final String note;
+
+  const _SafetyBanner({required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: scheme.onErrorContainer,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              note,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onErrorContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -637,15 +727,19 @@ class _SectionLabel extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Icon(Icons.edit_outlined,
-                size: 16, color: theme.colorScheme.primary),
+            child: Icon(
+              Icons.edit_outlined,
+              size: 16,
+              color: theme.colorScheme.primary,
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               text,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -657,6 +751,77 @@ class _SectionLabel extends StatelessWidget {
 /// Campus rungs 1-9 as a row of tap targets. The value is an ordinal on a
 /// physical ladder, so a picker beats a text field: no decimals, no typos,
 /// and the available range is visible.
+/// Edge depths run big-to-small left-to-right, so "further right is a better
+/// result" matches every other scale in the app even though the number is
+/// falling.
+class _MinEdgePicker extends StatelessWidget {
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  const _MinEdgePicker({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            for (final mm in _edgeSizesMm)
+              Semantics(
+                selected: mm == value,
+                button: true,
+                label: '$mm millimetre edge',
+                excludeSemantics: true,
+                child: InkWell(
+                  onTap: () => onChanged(mm),
+                  borderRadius: BorderRadius.circular(AppTheme.controlRadius),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: mm == value
+                          ? scheme.primary
+                          : scheme.surfaceContainer,
+                      borderRadius: BorderRadius.circular(
+                        AppTheme.controlRadius,
+                      ),
+                      border: Border.all(
+                        color: mm == value
+                            ? scheme.primary
+                            : scheme.outlineVariant,
+                      ),
+                    ),
+                    child: Text(
+                      '$mm',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: mm == value
+                            ? scheme.onPrimary
+                            : scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Smallest edge held for 7 s at bodyweight: $value mm',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _RungPicker extends StatelessWidget {
   final int value;
   final ValueChanged<int> onChanged;
@@ -674,7 +839,7 @@ class _RungPicker extends StatelessWidget {
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: [
-            for (var rung = 1; rung <= 9; rung++)
+            for (var rung = 1; rung <= 8; rung++)
               Semantics(
                 selected: rung == value,
                 button: true,
@@ -691,8 +856,9 @@ class _RungPicker extends StatelessWidget {
                       color: rung == value
                           ? scheme.primary
                           : scheme.surfaceContainer,
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.controlRadius),
+                      borderRadius: BorderRadius.circular(
+                        AppTheme.controlRadius,
+                      ),
                       border: Border.all(
                         color: rung == value
                             ? scheme.primary
@@ -715,8 +881,9 @@ class _RungPicker extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Text(
           'Highest rung latched and held: $value',
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: scheme.onSurfaceVariant),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -759,8 +926,9 @@ class _CoreLevelPicker extends StatelessWidget {
               Text(
                 _coreLadder[value]!,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(color: scheme.onPrimaryContainer),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                ),
               ),
             ],
           ),
@@ -776,8 +944,9 @@ class _CoreLevelPicker extends StatelessWidget {
         ),
         Text(
           'Held cleanly for at least 5 seconds',
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: scheme.onSurfaceVariant),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -808,7 +977,8 @@ class _BoardMovesInput extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         const _ProtocolNote(
           icon: Icons.push_pin_outlined,
-          text: 'Note down which board and which problem you used. Retesting '
+          text:
+              'Note down which board and which problem you used. Retesting '
               'on a different problem makes your progress line meaningless.',
         ),
       ],
@@ -902,10 +1072,12 @@ class _DerivedTwoFieldInputState extends State<_DerivedTwoFieldInput> {
                 result == null ? widget.invalidHint : widget.format(result),
                 textAlign: TextAlign.center,
                 style: result == null
-                    ? theme.textTheme.bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant)
-                    : theme.textTheme.headlineSmall
-                        ?.copyWith(color: scheme.onPrimaryContainer),
+                    ? theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      )
+                    : theme.textTheme.headlineSmall?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
               ),
             ],
           ),

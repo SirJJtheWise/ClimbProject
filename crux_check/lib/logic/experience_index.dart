@@ -7,6 +7,7 @@ double experienceIndex({
   required double sessionsPerWeek,
   required double yearsClimbingOutdoors,
 }) {
-  final raw = yearsClimbing * 8 + sessionsPerWeek * 4 + yearsClimbingOutdoors * 3;
+  final raw =
+      yearsClimbing * 8 + sessionsPerWeek * 4 + yearsClimbingOutdoors * 3;
   return raw.clamp(0, 100);
 }

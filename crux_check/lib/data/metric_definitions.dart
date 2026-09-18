@@ -1,23 +1,32 @@
 import '../models/enums.dart';
 import '../models/metric_def.dart';
 
-/// The 15-metric catalogue from the spec: definitions, protocols, weights,
-/// evidence notes and normative ranges. Weights sum to 95, not 100 — the
-/// small residual is intentional (spec: "absorbed by renormalization when
-/// the user skips tests") since the composite formula divides by the sum of
+/// The 14-metric catalogue from the spec: definitions, protocols, weights,
+/// evidence notes and normative ranges. Weights sum to 91, not 100 — the
+/// residual is intentional (spec: "absorbed by renormalization when the
+/// user skips tests") since the composite formula divides by the sum of
 /// weights actually used, not by a fixed 100.
 ///
 /// Every test here measures something the others do not. Where the spec
 /// offered two protocol options for a metric, the option chosen is the one
 /// that does *not* collide with a neighbouring test:
 ///
-///  * Power-endurance is the board max-moves variant, not 7:3 repeaters —
-///    otherwise it is the same hangboard protocol as finger endurance.
+///  * Power-endurance is the board max-moves variant, not 7:3 repeaters,
+///    so it does not restate a hangboard protocol. It carries 0% weight:
+///    its own evidence (Lattice R=0.007 for bouldering) says it does not
+///    predict grade, and a metric that admits it cannot predict should not
+///    be allowed to move the prediction. Kept for weakness profiling.
 ///  * Explosive power is the double-dyno variant only; the "max campus
 ///    1-5-9" alternative would repeat the campus-reach test used for RFD.
-///  * Edge tolerance and pull-up reps are framed as profiling companions to
-///    finger strength and pulling strength rather than as rival strength
-///    tests, matching their 0% and 1% weights.
+///  * Pull-up reps is framed as a profiling companion to pulling strength
+///    rather than a rival strength test, matching its 1% weight.
+///  * The fingers group is a load test and a size test, not two load
+///    tests. Finger strength asks how much load a 20 mm edge takes; min
+///    edge asks how little edge holds bodyweight. Edge tolerance (max
+///    added load on a small edge) was dropped because it was the first
+///    protocol with the edge swapped, and finger endurance / critical
+///    force was dropped because reading a falling force off a hangboard
+///    needs a load cell the equipment list never had.
 class MetricDefinitions {
   MetricDefinitions._();
 
@@ -121,10 +130,13 @@ class MetricDefinitions {
           'How fast you generate force, measured by how far you can campus in '
           'one explosive pull. This is about the speed of the catch — '
           'explosive power measures how far you can launch.',
-      equipment: 'A standard campus board with numbered rungs.',
+      equipment:
+          'A campus board with numbered rungs at standard 22 mm-deep, 22 cm '
+          'spacing (Metolius-style). Rung spacing varies between boards, so '
+          'stay on the same board between retests or the number drifts.',
       steps: [
         'Warm up thoroughly, including several sub-maximal campus moves.',
-        'Start matched on the bottom rung with both hands.',
+        'Start matched on rung 1 with both hands.',
         'Campus with one hand to the highest rung you can latch and hold under '
             'control.',
         'A touch does not count — you have to hold the latch for it to count.',
@@ -141,10 +153,10 @@ class MetricDefinitions {
       safetyNote:
           '$warmUpNote High-force campus moves stress pulleys and shoulders — only attempt if you already campus board regularly.',
       evidenceNote:
-          'Distinguishes elite from advanced climbers (Levernier & Laffaye 2019; Stien et al.).',
+          'Distinguishes elite from advanced climbers (Levernier & Laffaye 2019; Stien et al.). Calibrated so rung 4 is an average result and rung 6 is elite — on 22 cm spacing a one-hand move past rung 6 is roughly a 110 cm reach gain, which almost nobody holds.',
       evidenceStrength: EvidenceStrength.moderate,
-      maleNormativeRange: NormativeRange(worst: 2, best: 9),
-      femaleNormativeRange: NormativeRange(worst: 1, best: 8),
+      maleNormativeRange: NormativeRange(worst: 2, best: 6),
+      femaleNormativeRange: NormativeRange(worst: 1, best: 5),
     ),
     MetricId.explosivePower: const MetricDef(
       id: MetricId.explosivePower,
@@ -201,7 +213,8 @@ class MetricDefinitions {
           'How long you can hold a bent-arm position. This is the static '
           'strength that lets you move off a hold in control instead of '
           'pulling past it and hoping.',
-      equipment: 'Pull-up bar or a jug. A weight harness for the two-arm '
+      equipment:
+          'Pull-up bar or a jug. A weight harness for the two-arm '
           'variation.',
       steps: [
         'Warm up with easy pull-ups and a few short lock-offs.',
@@ -227,55 +240,13 @@ class MetricDefinitions {
       maleNormativeRange: NormativeRange(worst: 0, best: 20),
       femaleNormativeRange: NormativeRange(worst: 0, best: 15),
     ),
-    MetricId.edgeTolerance: const MetricDef(
-      id: MetricId.edgeTolerance,
-      name: 'Edge tolerance (small-edge finger strength)',
-      shortName: 'Edge tolerance',
-      group: MetricGroup.fingers,
-      bucket: MetricBucket.trainablePhysical,
-      weight: 0,
-      unit: '%BW',
-      hasGradeTable: false,
-      summary:
-          'A second finger-strength reading on a small edge. This one does not '
-          'move your grade estimate — it profiles how well your strength '
-          'carries from 20 mm down onto micro-edges.',
-      equipment: '8-10 mm hangboard edge, dip belt or harness.',
-      steps: [
-        'Record a 20 mm finger-strength result first. Without it this number '
-            'has nothing to be compared against.',
-        'Warm up fully, including a few hangs on the 20 mm edge.',
-        'Set a strict half-crimp on the 8-10 mm edge.',
-        'Hang both hands, arms straight, for 7 seconds — identical protocol to '
-            'the 20 mm test, just a smaller edge.',
-        'Bracket your max in a few attempts only. Small edges load the pulleys '
-            'hard; stop at the first twinge.',
-      ],
-      recordText:
-          'Enter bodyweight and added load. Compare the %BW here with your '
-          '20 mm result to see how far your strength carries down.',
-      commonMistakes: [
-        'Testing this before you have a 20 mm baseline — on its own it says '
-            'very little.',
-        'Switching to a full crimp because the edge feels small.',
-        'Reading a big drop from 20 mm as a weakness. Most climbers lose a lot '
-            'between 20 mm and 8 mm; the ratio is what is interesting.',
-      ],
-      safetyNote:
-          '$warmUpNote Small edges concentrate load — only attempt once you have a solid 20mm baseline.',
-      evidenceNote:
-          'Folds into the finger-strength profile; not separately weighted in the composite.',
-      evidenceStrength: EvidenceStrength.informedEstimate,
-      maleNormativeRange: NormativeRange(worst: 15, best: 80),
-      femaleNormativeRange: NormativeRange(worst: 10, best: 70),
-    ),
     MetricId.powerEndurance: const MetricDef(
       id: MetricId.powerEndurance,
       name: 'Power-endurance (board max moves)',
       shortName: 'Power-endurance',
       group: MetricGroup.pullPower,
       bucket: MetricBucket.trainablePhysical,
-      weight: 4,
+      weight: 0,
       unit: 'moves',
       hasGradeTable: false,
       summary:
@@ -310,48 +281,52 @@ class MetricDefinitions {
       maleNormativeRange: NormativeRange(worst: 10, best: 80),
       femaleNormativeRange: NormativeRange(worst: 10, best: 80),
     ),
-    MetricId.fingerEndurance: const MetricDef(
-      id: MetricId.fingerEndurance,
-      name: 'Finger endurance / critical force',
-      shortName: 'Finger endurance',
+    MetricId.minEdge: const MetricDef(
+      id: MetricId.minEdge,
+      name: 'Minimum edge (bodyweight hang)',
+      shortName: 'Min edge',
       group: MetricGroup.fingers,
       bucket: MetricBucket.trainablePhysical,
       weight: 3,
-      unit: '%BW',
+      unit: 'mm',
       hasGradeTable: false,
       summary:
-          'The load your fingers can still hold after four minutes of '
-          'repeaters — your critical force. This is the only hangboard '
-          'endurance test in the app; power-endurance is measured on a board.',
+          'The smallest edge you can hang at bodyweight for 7 seconds. Max '
+          'finger strength asks how much load a 20 mm edge takes; this asks '
+          'how little edge you need. The two come apart often enough to be '
+          'worth knowing separately.',
       equipment:
-          '20 mm hangboard edge, a load setup you can adjust quickly, and an '
-          'interval timer set to 7 seconds on / 3 seconds off.',
+          'A hangboard with a range of edge depths, ideally 6-20 mm. No added '
+          'weight and no assistance.',
       steps: [
-        'Warm up thoroughly, then rest 5 minutes so you start fresh.',
-        'Set the 7:3 interval timer running for 4 minutes — 24 repetitions.',
-        'Hang all-out on the 20 mm edge for every 7-second rep, resting 3 '
-            'seconds between.',
-        'Do not pace yourself. Pull maximally from the first rep; the force '
-            'curve is supposed to fall away.',
-        'Your critical force is the load you were still sustaining over the '
-            'final 30 seconds.',
+        'Record your 20 mm max finger strength first and warm up on the 20 mm '
+            'edge — this test reads against that one.',
+        'Start on an edge you know you can hold. Hang at bodyweight, both '
+            'hands, strict half-crimp, arms straight.',
+        'Hold 7 seconds. Clean? Rest 3 minutes and move down to the next '
+            'smaller edge.',
+        'Your result is the smallest edge you held for a clean 7 seconds.',
+        'Three or four edges is enough for one session. Small edges load the '
+            'pulleys hard — stop at the first twinge rather than bracketing '
+            'exactly.',
       ],
       recordText:
-          'Enter bodyweight and the load you were still holding in the last 30 '
-          'seconds. Recorded as %BW.',
+          'Enter the smallest edge you held cleanly for 7 seconds at '
+          'bodyweight. Smaller is stronger.',
       commonMistakes: [
-        'Pacing the early reps, which flattens the curve and overstates your '
-            'critical force.',
-        'Cutting the test short — the end-force is the entire measurement.',
-        'Confusing this with the max hang: this is what you can sustain, not '
-            'your peak.',
+        'Adding or taking off weight. This one is bodyweight only — load is '
+            'what the max finger strength test is for.',
+        'Letting the half-crimp roll into a full crimp as the edge shrinks.',
+        'Counting an edge you held for three or four seconds. The full 7 '
+            'seconds is what makes the number comparable between sessions.',
       ],
-      safetyNote: warmUpNote,
+      safetyNote:
+          '$warmUpNote Small edges concentrate load on the pulleys — drop one edge at a time and stop at the first twinge.',
       evidenceNote:
-          'Explains ~26% of bouldering variance vs ~61% for sport climbing (Giles et al.) — genuine bouldering/sport distinction.',
+          'Small-edge capacity tracks bouldering grade closely (Lattice min-edge protocol). Scored as a companion to the 20 mm max rather than a second anchor.',
       evidenceStrength: EvidenceStrength.informedEstimate,
-      maleNormativeRange: NormativeRange(worst: 30, best: 70),
-      femaleNormativeRange: NormativeRange(worst: 25, best: 60),
+      maleNormativeRange: NormativeRange(worst: 20, best: 6),
+      femaleNormativeRange: NormativeRange(worst: 20, best: 7),
     ),
     MetricId.core: const MetricDef(
       id: MetricId.core,
@@ -404,7 +379,8 @@ class MetricDefinitions {
       summary:
           'How wide you can get your feet — the mobility behind drop-knees and '
           'wide stems. The strongest mobility signal for climbing.',
-      equipment: 'A wall to steady yourself and a tape measure. A partner '
+      equipment:
+          'A wall to steady yourself and a tape measure. A partner '
           'makes the measurement much easier.',
       steps: [
         'Warm the hips and adductors with dynamic leg swings. Do not test '
@@ -526,7 +502,8 @@ class MetricDefinitions {
       summary:
           'Arm span minus height. Worth roughly 0.14 V-grades per inch — real, '
           'small, and nothing you can train.',
-      equipment: 'Nothing. Computed from the arm span and height in your '
+      equipment:
+          'Nothing. Computed from the arm span and height in your '
           'profile.',
       steps: [
         'Measured once during onboarding: stand with your arms out horizontal '
@@ -621,20 +598,19 @@ class MetricDefinitions {
   };
 
   static List<MetricDef> get orderedForHub => [
-        all[MetricId.fingerStrength]!,
-        all[MetricId.edgeTolerance]!,
-        all[MetricId.fingerEndurance]!,
-        all[MetricId.pullingStrength]!,
-        all[MetricId.rfdContact]!,
-        all[MetricId.explosivePower]!,
-        all[MetricId.lockOff]!,
-        all[MetricId.powerEndurance]!,
-        all[MetricId.pullReps]!,
-        all[MetricId.core]!,
-        all[MetricId.hipAbduction]!,
-        all[MetricId.hipFlexion]!,
-        all[MetricId.bodyComposition]!,
-        all[MetricId.apeIndex]!,
-        all[MetricId.experience]!,
-      ];
+    all[MetricId.fingerStrength]!,
+    all[MetricId.minEdge]!,
+    all[MetricId.pullingStrength]!,
+    all[MetricId.rfdContact]!,
+    all[MetricId.explosivePower]!,
+    all[MetricId.lockOff]!,
+    all[MetricId.powerEndurance]!,
+    all[MetricId.pullReps]!,
+    all[MetricId.core]!,
+    all[MetricId.hipAbduction]!,
+    all[MetricId.hipFlexion]!,
+    all[MetricId.bodyComposition]!,
+    all[MetricId.apeIndex]!,
+    all[MetricId.experience]!,
+  ];
 }

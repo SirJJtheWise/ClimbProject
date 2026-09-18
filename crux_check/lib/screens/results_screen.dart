@@ -3,13 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../data/metric_definitions.dart';
-import '../logic/grade_conversion.dart';
 import '../models/assessment.dart';
 import '../state/app_state.dart';
+import '../utils/grade_format.dart';
 import '../theme/app_theme.dart';
 import '../widgets/level_bar.dart';
 import '../widgets/metric_radar_chart.dart';
 import '../widgets/profile_button.dart';
+import '../widgets/support_card.dart';
 
 class ResultsScreen extends StatefulWidget {
   const ResultsScreen({super.key});
@@ -44,7 +45,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Results'),
-        actions: const [ProfileButton(), SizedBox(width: AppSpacing.xs)],
+        actions: const [
+          ProfileButton(),
+          SizedBox(width: AppSpacing.xs),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -80,11 +84,14 @@ class _ResultsScreenState extends State<ResultsScreen> {
                           children: [
                             MetricRadarChart(
                               axes: assessment.perMetricPercentiles
-                                  .map((p) => RadarAxis(
-                                        MetricDefinitions
-                                            .all[p.metricId]!.shortName,
-                                        p.percentile,
-                                      ))
+                                  .map(
+                                    (p) => RadarAxis(
+                                      MetricDefinitions
+                                          .all[p.metricId]!
+                                          .shortName,
+                                      p.percentile,
+                                    ),
+                                  )
                                   .toList(),
                             ),
                             const SizedBox(height: AppSpacing.lg),
@@ -92,9 +99,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             ...assessment.perMetricPercentiles.map(
                               (p) => LevelBar(
                                 label: MetricDefinitions
-                                    .all[p.metricId]!.shortName,
+                                    .all[p.metricId]!
+                                    .shortName,
                                 percentile: p.percentile,
-                                trailingText: vGradeLabel(p.gradeEquivalent),
+                                trailingText: context.grade(p.gradeEquivalent),
                               ),
                             ),
                           ],
@@ -103,19 +111,21 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     OutlinedButton.icon(
-                      onPressed:
-                          _calculating ? null : () => _calculate(appState),
+                      onPressed: _calculating
+                          ? null
+                          : () => _calculate(appState),
                       icon: _calculating
                           ? const SizedBox(
                               height: 16,
                               width: 16,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.refresh_rounded),
-                      label: Text(_calculating
-                          ? 'Calculating…'
-                          : 'Recalculate with latest tests'),
+                      label: Text(
+                        _calculating
+                            ? 'Calculating…'
+                            : 'Recalculate with latest tests',
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
@@ -123,8 +133,11 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       '${DateFormat.yMMMd().add_jm().format(assessment.date.toLocal())}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
+                    const SizedBox(height: AppSpacing.xl),
+                    const SupportCard(),
                   ],
                 ),
               ),
@@ -145,7 +158,11 @@ class _SectionHeading extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xs, AppSpacing.xl, AppSpacing.xs, AppSpacing.md),
+        AppSpacing.xs,
+        AppSpacing.xl,
+        AppSpacing.xs,
+        AppSpacing.md,
+      ),
       child: Text(
         title.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(
@@ -180,14 +197,14 @@ class _EmptyState extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: scheme.primaryContainer,
               ),
-              child: Icon(Icons.insights_rounded,
-                  size: 40, color: scheme.onPrimaryContainer),
+              child: Icon(
+                Icons.insights_rounded,
+                size: 40,
+                color: scheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text(
-              'No grade estimate yet',
-              style: theme.textTheme.titleLarge,
-            ),
+            Text('No grade estimate yet', style: theme.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
             // Capped measure: a full-width paragraph is unreadable on a
             // tablet, and this is the first sentence a new user reads.
@@ -197,8 +214,9 @@ class _EmptyState extends StatelessWidget {
                 'Record at least a finger-strength or pulling-strength test in '
                 'the Test hub, then calculate your grade estimate here.',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
@@ -228,7 +246,9 @@ class _GradeHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.xxl, horizontal: AppSpacing.xl),
+        vertical: AppSpacing.xxl,
+        horizontal: AppSpacing.xl,
+      ),
       decoration: BoxDecoration(
         color: scheme.primary,
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
@@ -237,12 +257,17 @@ class _GradeHeader extends StatelessWidget {
         children: [
           Text(
             'YOUR GRADE RANGE',
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: scheme.onPrimary, letterSpacing: 1.4),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onPrimary,
+              letterSpacing: 1.4,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            vRangeLabel(assessment.confidenceLow, assessment.confidenceHigh),
+            context.gradeRange(
+              assessment.confidenceLow,
+              assessment.confidenceHigh,
+            ),
             textAlign: TextAlign.center,
             style: theme.textTheme.displaySmall?.copyWith(
               color: scheme.onPrimary,
@@ -251,12 +276,17 @@ class _GradeHeader extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'most likely ${vGradeLabel(assessment.gradeComposite)}',
-            style: theme.textTheme.titleMedium?.copyWith(color: scheme.onPrimary),
+            'most likely ${context.grade(assessment.gradeComposite)}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: scheme.onPrimary,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            fontRangeLabel(assessment.confidenceLow, assessment.confidenceHigh),
+            context.gradeRangeAlternate(
+              assessment.confidenceLow,
+              assessment.confidenceHigh,
+            ),
             style: theme.textTheme.bodySmall?.copyWith(color: scheme.onPrimary),
           ),
           if (assessment.gradeComposite > 10) ...[
@@ -271,8 +301,9 @@ class _GradeHeader extends StatelessWidget {
                 'Physical predictors explain less of the picture above V11 — '
                 'this range is wider than a lower-grade estimate would be.',
                 textAlign: TextAlign.center,
-                style:
-                    theme.textTheme.bodySmall?.copyWith(color: scheme.onPrimary),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onPrimary,
+                ),
               ),
             ),
           ],
@@ -293,20 +324,20 @@ class _CeilingVsExperience extends StatelessWidget {
     final diff = assessment.gradeCeiling - assessment.gradeExperience;
     final (IconData icon, String note) = switch (diff) {
       > 0.75 => (
-          Icons.fitness_center_rounded,
-          "Your fingers/body support a higher grade than your experience "
-              "suggests you're climbing — technique and mileage are likely your "
-              "limiter. Climb more, especially outdoors.",
-        ),
+        Icons.fitness_center_rounded,
+        "Your fingers/body support a higher grade than your experience "
+            "suggests you're climbing — technique and mileage are likely your "
+            "limiter. Climb more, especially outdoors.",
+      ),
       < -0.75 => (
-          Icons.trending_up_rounded,
-          'You climb above your raw physical numbers — targeted strength '
-              'training would likely raise your ceiling further.',
-        ),
+        Icons.trending_up_rounded,
+        'You climb above your raw physical numbers — targeted strength '
+            'training would likely raise your ceiling further.',
+      ),
       _ => (
-          Icons.balance_rounded,
-          'Your physical ceiling and climbing experience are well matched.',
-        ),
+        Icons.balance_rounded,
+        'Your physical ceiling and climbing experience are well matched.',
+      ),
     };
 
     return Card(
@@ -343,8 +374,9 @@ class _CeilingVsExperience extends StatelessWidget {
                 Expanded(
                   child: Text(
                     note,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -370,14 +402,16 @@ class _MarkerStat extends StatelessWidget {
         Text(
           label,
           textAlign: TextAlign.center,
-          style: theme.textTheme.labelMedium
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          vGradeLabel(grade),
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(color: theme.colorScheme.primary),
+          context.grade(grade),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.colorScheme.primary,
+          ),
         ),
       ],
     );
@@ -430,25 +464,28 @@ class _LimiterCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           def.shortName,
-                          style: theme.textTheme.titleSmall
-                              ?.copyWith(color: scheme.onSurface),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: scheme.onSurface,
+                          ),
                         ),
                       ),
                       Text(
-                        vGradeLabel(metricGrade),
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(color: levels.weak),
+                        context.grade(metricGrade),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: levels.weak,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Your physical ceiling is '
-                    '${vGradeLabel(assessment.gradeCeiling)} — '
+                    '${context.grade(assessment.gradeCeiling)} — '
                     '${def.shortName.toLowerCase()} is holding you back by '
                     'about ${factor.deficit.toStringAsFixed(1)} grades.',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: scheme.onSurface),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurface,
+                    ),
                   ),
                 ],
               ),

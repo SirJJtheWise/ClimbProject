@@ -4,11 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../data/metric_definitions.dart';
-import '../logic/grade_conversion.dart';
 import '../models/assessment.dart';
 import '../models/enums.dart';
 import '../models/test_result.dart';
 import '../state/app_state.dart';
+import '../utils/grade_format.dart';
 import '../theme/app_theme.dart';
 import '../widgets/profile_button.dart';
 
@@ -18,10 +18,9 @@ enum _HistorySeries { grade, metric }
 /// per data point, thinned out with an interval so they don't collide when
 /// there are many sessions.
 AxisTitles _dateBottomTitles(BuildContext context, List<DateTime> dates) {
-  final style = Theme.of(context)
-      .textTheme
-      .bodySmall
-      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+  final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+  );
   final interval = dates.length <= 5 ? 1 : (dates.length / 5).ceil();
   return AxisTitles(
     sideTitles: SideTitles(
@@ -44,12 +43,12 @@ AxisTitles _dateBottomTitles(BuildContext context, List<DateTime> dates) {
 /// charts read from the same, theme-aware system instead of fl_chart's
 /// unstyled grey defaults.
 FlGridData _gridData(BuildContext context) => FlGridData(
-      drawVerticalLine: false,
-      getDrawingHorizontalLine: (_) => FlLine(
-        color: Theme.of(context).colorScheme.outlineVariant,
-        strokeWidth: 1,
-      ),
-    );
+  drawVerticalLine: false,
+  getDrawingHorizontalLine: (_) => FlLine(
+    color: Theme.of(context).colorScheme.outlineVariant,
+    strokeWidth: 1,
+  ),
+);
 
 /// Shared line styling: a solid stroke, dots the same colour as the line,
 /// and a soft fill beneath it so a sparse series still reads as a trend
@@ -62,11 +61,8 @@ LineChartBarData _seriesBar(List<FlSpot> spots, Color color) =>
       barWidth: 3,
       dotData: FlDotData(
         show: true,
-        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-          radius: 4,
-          color: color,
-          strokeWidth: 0,
-        ),
+        getDotPainter: (spot, percent, bar, index) =>
+            FlDotCirclePainter(radius: 4, color: color, strokeWidth: 0),
       ),
       belowBarData: BarAreaData(
         show: true,
@@ -92,7 +88,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Progress'),
-        actions: const [ProfileButton(), SizedBox(width: AppSpacing.xs)],
+        actions: const [
+          ProfileButton(),
+          SizedBox(width: AppSpacing.xs),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -128,10 +127,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   initialValue: _selectedMetric,
                   decoration: const InputDecoration(labelText: 'Metric'),
                   items: MetricDefinitions.orderedForHub
-                      .map((d) => DropdownMenuItem(
-                            value: d.id,
-                            child: Text(d.shortName),
-                          ))
+                      .map(
+                        (d) => DropdownMenuItem(
+                          value: d.id,
+                          child: Text(d.shortName),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) =>
                       setState(() => _selectedMetric = v ?? _selectedMetric),
@@ -141,12 +142,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Expanded(
                 child: Card(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(AppSpacing.md,
-                        AppSpacing.xl, AppSpacing.xl, AppSpacing.md),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.xl,
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                    ),
                     child: _series == _HistorySeries.grade
                         ? _GradeHistoryChart(appState: appState)
                         : _MetricHistoryChart(
-                            appState: appState, metricId: _selectedMetric),
+                            appState: appState,
+                            metricId: _selectedMetric,
+                          ),
                   ),
                 ),
               ),
@@ -175,14 +182,18 @@ class _ChartEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.timeline_rounded,
-                size: 36, color: theme.colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.timeline_rounded,
+              size: 36,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -225,18 +236,23 @@ class _GradeHistoryChart extends StatelessWidget {
                   showTitles: true,
                   reservedSize: 40,
                   getTitlesWidget: (v, meta) => Text(
-                    vGradeLabel(v),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    context.grade(v),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
-              bottomTitles:
-                  _dateBottomTitles(context, data.map((a) => a.date).toList()),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: _dateBottomTitles(
+                context,
+                data.map((a) => a.date).toList(),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
             lineBarsData: [_seriesBar(spots, theme.colorScheme.primary)],
           ),
@@ -277,8 +293,9 @@ class _MetricHistoryChart extends StatelessWidget {
               padding: const EdgeInsets.only(left: AppSpacing.sm),
               child: Text(
                 '${def.shortName} · ${def.unit}',
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -295,18 +312,25 @@ class _MetricHistoryChart extends StatelessWidget {
                         getTitlesWidget: (v, meta) => Text(
                           v.toStringAsFixed(0),
                           style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant),
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
                     bottomTitles: _dateBottomTitles(
-                        context, data.map((r) => r.date).toList()),
+                      context,
+                      data.map((r) => r.date).toList(),
+                    ),
                     rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
-                  lineBarsData: [_seriesBar(spots, theme.colorScheme.secondary)],
+                  lineBarsData: [
+                    _seriesBar(spots, theme.colorScheme.secondary),
+                  ],
                 ),
               ),
             ),

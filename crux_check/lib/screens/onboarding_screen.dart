@@ -23,11 +23,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       widget.existingUser?.gradeScalePref ?? GradeScale.v;
   late DateTime? _birthdate = widget.existingUser?.birthdate;
   late final _heightController = TextEditingController(
-      text: widget.existingUser?.heightCm.toStringAsFixed(1) ?? '');
+    text: widget.existingUser?.heightCm.toStringAsFixed(1) ?? '',
+  );
   late final _armSpanController = TextEditingController(
-      text: widget.existingUser?.armSpanCm.toStringAsFixed(1) ?? '');
+    text: widget.existingUser?.armSpanCm.toStringAsFixed(1) ?? '',
+  );
   late final _weightController = TextEditingController(
-      text: widget.existingWeightKg?.toStringAsFixed(1) ?? '');
+    text: widget.existingWeightKg?.toStringAsFixed(1) ?? '',
+  );
 
   bool get _isEditing => widget.existingUser != null;
 
@@ -69,9 +72,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (_isEditing && mounted) Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save profile: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save profile: $e')));
     }
   }
 
@@ -111,8 +114,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Text(
                   'A few basics to anchor your grade estimate. All physical '
                   'tests are optional and can be added later.',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: scheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               const _FieldLabel('Sex'),
@@ -146,8 +150,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _heightController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Height (cm)'),
                 validator: _requiredPositiveNumber,
@@ -155,8 +160,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _armSpanController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Arm span (cm)',
@@ -167,11 +173,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _weightController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 textInputAction: TextInputAction.done,
-                decoration:
-                    const InputDecoration(labelText: 'Current bodyweight (kg)'),
+                decoration: const InputDecoration(
+                  labelText: 'Current bodyweight (kg)',
+                ),
                 validator: _requiredPositiveNumber,
               ),
               const _FieldLabel('Preferred grade scale'),
@@ -181,13 +189,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ButtonSegment(value: GradeScale.font, label: Text('Font')),
                 ],
                 selected: {_gradeScale},
-                onSelectionChanged: (s) => setState(() => _gradeScale = s.first),
+                onSelectionChanged: (s) =>
+                    setState(() => _gradeScale = s.first),
               ),
               const SizedBox(height: AppSpacing.xxl),
               FilledButton(
                 onPressed: _submit,
-                child:
-                    Text(_isEditing ? 'Save changes' : 'Continue to test hub'),
+                child: Text(
+                  _isEditing ? 'Save changes' : 'Continue to test hub',
+                ),
               ),
             ],
           ),
@@ -209,8 +219,7 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(
-          top: AppSpacing.xl, bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.md),
       child: Text(
         text.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(

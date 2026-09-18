@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'screens/disclaimer_screen.dart';
 import 'screens/home_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'state/app_state.dart';
@@ -36,9 +37,12 @@ class _RootRouter extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     if (appState.loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    // Ahead of onboarding: the injury warning has to land before the app has
+    // asked for anything, not after.
+    if (appState.needsDisclaimer) {
+      return const DisclaimerScreen();
     }
     if (!appState.hasProfile) {
       return const OnboardingScreen();

@@ -69,25 +69,29 @@ class MetricRadarChart extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 1,
       child: Semantics(
-        label: 'Strength profile: '
+        label:
+            'Strength profile: '
             '${axes.map((a) => '${a.label} ${a.percentile.round()}th percentile').join(', ')}',
         excludeSemantics: true,
         child: RadarChart(
           RadarChartData(
             radarShape: RadarShape.polygon,
             tickCount: 4,
-            ticksTextStyle:
-                const TextStyle(color: Colors.transparent, fontSize: 0),
+            ticksTextStyle: const TextStyle(
+              color: Colors.transparent,
+              fontSize: 0,
+            ),
             radarBorderData: BorderSide(color: ink.withValues(alpha: 0.35)),
             gridBorderData: BorderSide(color: ink.withValues(alpha: 0.2)),
             titleTextStyle: showLabels
-                ? theme.textTheme.labelSmall
-                    ?.copyWith(color: ink, letterSpacing: 0.2)
+                ? theme.textTheme.labelSmall?.copyWith(
+                    color: ink,
+                    letterSpacing: 0.2,
+                  )
                 : const TextStyle(color: Colors.transparent, fontSize: 0),
             titlePositionPercentageOffset: showLabels ? 0.18 : 0,
             getTitle: (index, angle) {
-              return RadarChartTitle(
-                  text: showLabels ? axes[index].label : '');
+              return RadarChartTitle(text: showLabels ? axes[index].label : '');
             },
             dataSets: [
               RadarDataSet(
@@ -95,8 +99,9 @@ class MetricRadarChart extends StatelessWidget {
                 borderColor: ink,
                 borderWidth: 2,
                 entryRadius: 3,
-                dataEntries:
-                    axes.map((a) => RadarEntry(value: a.percentile)).toList(),
+                dataEntries: axes
+                    .map((a) => RadarEntry(value: a.percentile))
+                    .toList(),
               ),
             ],
           ),

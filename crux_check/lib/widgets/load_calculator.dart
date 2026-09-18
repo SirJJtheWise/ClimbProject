@@ -8,7 +8,7 @@ import '../theme/app_theme.dart';
 class LoadCalculator extends StatefulWidget {
   final double initialBodyWeightKg;
   final void Function(double pctBW, double bodyWeightKg, double addedLoadKg)
-      onChanged;
+  onChanged;
 
   const LoadCalculator({
     super.key,
@@ -22,8 +22,9 @@ class LoadCalculator extends StatefulWidget {
 
 class _LoadCalculatorState extends State<LoadCalculator> {
   late final TextEditingController _bwController;
-  final TextEditingController _addedController =
-      TextEditingController(text: '0');
+  final TextEditingController _addedController = TextEditingController(
+    text: '0',
+  );
   double _pctBW = 100;
 
   @override
@@ -66,16 +67,16 @@ class _LoadCalculatorState extends State<LoadCalculator> {
         TextField(
           controller: _bwController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Bodyweight (kg)',
-          ),
+          decoration: const InputDecoration(labelText: 'Bodyweight (kg)'),
           onChanged: (_) => _recompute(),
         ),
         const SizedBox(height: AppSpacing.md),
         TextField(
           controller: _addedController,
           keyboardType: const TextInputType.numberWithOptions(
-              decimal: true, signed: true),
+            decimal: true,
+            signed: true,
+          ),
           decoration: const InputDecoration(
             labelText: 'Added load (kg)',
             helperText: 'Negative if assisted',
@@ -88,7 +89,9 @@ class _LoadCalculatorState extends State<LoadCalculator> {
         // floating under two inputs.
         Container(
           padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.lg, horizontal: AppSpacing.lg),
+            vertical: AppSpacing.lg,
+            horizontal: AppSpacing.lg,
+          ),
           decoration: BoxDecoration(
             color: scheme.primaryContainer,
             borderRadius: BorderRadius.circular(AppTheme.cardRadius),
@@ -105,8 +108,9 @@ class _LoadCalculatorState extends State<LoadCalculator> {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 '${_pctBW.toStringAsFixed(0)} %BW',
-                style: theme.textTheme.headlineMedium
-                    ?.copyWith(color: scheme.onPrimaryContainer),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                ),
               ),
             ],
           ),

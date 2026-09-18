@@ -14,11 +14,7 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  static const _screens = [
-    TestHubScreen(),
-    ResultsScreen(),
-    HistoryScreen(),
-  ];
+  static const _screens = [TestHubScreen(), ResultsScreen(), HistoryScreen()];
 
   @override
   Widget build(BuildContext context) {

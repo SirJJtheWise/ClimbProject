@@ -29,17 +29,25 @@ void main() {
     confidenceHigh: 9,
     perMetricPercentiles: const [
       MetricPercentile(
-          metricId: MetricId.fingerStrength,
-          percentile: 82,
-          gradeEquivalent: 8.5),
+        metricId: MetricId.fingerStrength,
+        percentile: 82,
+        gradeEquivalent: 8.5,
+      ),
       MetricPercentile(
-          metricId: MetricId.pullingStrength,
-          percentile: 51,
-          gradeEquivalent: 7.0),
+        metricId: MetricId.pullingStrength,
+        percentile: 51,
+        gradeEquivalent: 7.0,
+      ),
       MetricPercentile(
-          metricId: MetricId.core, percentile: 18, gradeEquivalent: 5.2),
+        metricId: MetricId.core,
+        percentile: 18,
+        gradeEquivalent: 5.2,
+      ),
       MetricPercentile(
-          metricId: MetricId.hipFlexion, percentile: 64, gradeEquivalent: 7.4),
+        metricId: MetricId.hipFlexion,
+        percentile: 64,
+        gradeEquivalent: 7.4,
+      ),
     ],
     limitingFactors: const [
       LimitingFactor(metricId: MetricId.core, deficit: 2.1),
@@ -65,7 +73,9 @@ void main() {
 
   Widget host(Widget child, Brightness brightness) {
     return MaterialApp(
-      theme: brightness == Brightness.light ? AppTheme.light() : AppTheme.dark(),
+      theme: brightness == Brightness.light
+          ? AppTheme.light()
+          : AppTheme.dark(),
       home: Scaffold(
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.gutter),
@@ -95,17 +105,15 @@ void main() {
 
       await pumpAtSmallPhone(
         tester,
-        host(
-          LiveGradePreview(preview: preview, hasAnyTest: true),
-          brightness,
-        ),
+        host(LiveGradePreview(preview: preview, hasAnyTest: true), brightness),
       );
       await tester.pumpAndSettle();
       expect(find.text('LIVE ESTIMATE'), findsOneWidget);
     });
 
-    testWidgets('$mode: MetricCard renders tested and untested',
-        (tester) async {
+    testWidgets('$mode: MetricCard renders tested and untested', (
+      tester,
+    ) async {
       final def = MetricDefinitions.all[MetricId.fingerStrength]!;
       await pumpAtSmallPhone(
         tester,
@@ -126,12 +134,7 @@ void main() {
                 onTest: () {},
                 onHowTo: () {},
               ),
-              MetricCard(
-                def: def,
-                latest: null,
-                onTest: () {},
-                onHowTo: () {},
-              ),
+              MetricCard(def: def, latest: null, onTest: () {}, onHowTo: () {}),
             ],
           ),
           brightness,
@@ -196,10 +199,12 @@ void main() {
     expect(reset.onPressed, isNull);
   });
 
-  test('both themes carry a LevelPalette for the weak/at-level/strong scale',
-      () {
-    for (final theme in [AppTheme.light(), AppTheme.dark()]) {
-      expect(theme.extension<LevelPalette>(), isNotNull);
-    }
-  });
+  test(
+    'both themes carry a LevelPalette for the weak/at-level/strong scale',
+    () {
+      for (final theme in [AppTheme.light(), AppTheme.dark()]) {
+        expect(theme.extension<LevelPalette>(), isNotNull);
+      }
+    },
+  );
 }

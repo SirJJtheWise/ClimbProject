@@ -51,7 +51,8 @@ class _HangTimerState extends State<HangTimer> {
 
   @override
   Widget build(BuildContext context) {
-    final hitTarget = widget.targetSeconds != null &&
+    final hitTarget =
+        widget.targetSeconds != null &&
         _elapsedSeconds >= widget.targetSeconds!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -61,7 +62,9 @@ class _HangTimerState extends State<HangTimer> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.xl, horizontal: AppSpacing.lg),
+        vertical: AppSpacing.xl,
+        horizontal: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         // Tints the whole instrument on success, so the signal is visible
         // from arm's length on a hangboard — not just in the digits.
@@ -79,17 +82,13 @@ class _HangTimerState extends State<HangTimer> {
           // "you made it" signal, not a decorative flourish.
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 250),
-            style: (theme.textTheme.displayMedium ?? const TextStyle()).copyWith(
-              color: hitTarget ? levels.strong : scheme.onSurface,
-            ),
+            style: (theme.textTheme.displayMedium ?? const TextStyle())
+                .copyWith(color: hitTarget ? levels.strong : scheme.onSurface),
             child: Text('${_elapsedSeconds.toStringAsFixed(1)}s'),
           ),
           if (widget.targetSeconds != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            _TargetChip(
-              targetSeconds: widget.targetSeconds!,
-              hit: hitTarget,
-            ),
+            _TargetChip(targetSeconds: widget.targetSeconds!, hit: hitTarget),
           ],
           const SizedBox(height: AppSpacing.xl),
           // Both buttons flex rather than sitting at their theme minimum
@@ -102,7 +101,8 @@ class _HangTimerState extends State<HangTimer> {
                 child: FilledButton.icon(
                   onPressed: running ? _stop : _start,
                   icon: Icon(
-                      running ? Icons.stop_rounded : Icons.play_arrow_rounded),
+                    running ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                  ),
                   label: Text(running ? 'Stop' : 'Start'),
                 ),
               ),
@@ -150,8 +150,10 @@ class _TargetChip extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Text(
           hit ? 'target reached' : 'target: ${targetSeconds}s',
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w600),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

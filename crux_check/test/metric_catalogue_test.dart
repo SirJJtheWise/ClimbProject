@@ -24,8 +24,11 @@ void main() {
         expect(def.summary, isNotEmpty, reason: 'needs a "what it measures"');
         expect(def.equipment, isNotEmpty, reason: 'needs an equipment line');
         expect(def.recordText, isNotEmpty, reason: 'needs a "what to record"');
-        expect(def.steps.length, greaterThanOrEqualTo(2),
-            reason: 'a protocol worth following needs more than one step');
+        expect(
+          def.steps.length,
+          greaterThanOrEqualTo(2),
+          reason: 'a protocol worth following needs more than one step',
+        );
         for (final step in def.steps) {
           expect(step.trim(), isNotEmpty);
         }
@@ -38,9 +41,13 @@ void main() {
       final seen = <String, MetricId>{};
       for (final def in defs) {
         final key = def.steps.join('|');
-        expect(seen[key], isNull,
-            reason: '${def.shortName} has the same protocol as '
-                '${seen[key]?.name}');
+        expect(
+          seen[key],
+          isNull,
+          reason:
+              '${def.shortName} has the same protocol as '
+              '${seen[key]?.name}',
+        );
         seen[key] = def.id;
       }
     });
@@ -53,12 +60,53 @@ void main() {
       expect(pe.steps.join(' ').toLowerCase(), isNot(contains('hangboard')));
     });
 
-    test('finger endurance is the only 7:3 repeater protocol', () {
-      final repeaterTests = defs
-          .where((d) => d.steps.join(' ').toLowerCase().contains('7:3'))
-          .map((d) => d.id)
-          .toList();
-      expect(repeaterTests, [MetricId.fingerEndurance]);
+    test('no test asks for a force reading the equipment cannot produce', () {
+      // Critical force needs a load cell to read a falling force off. On a
+      // hangboard with hung plates the load is constant by construction, so
+      // any protocol asking for a sustained/declining force is unmeasurable
+      // with the equipment these tests list.
+      for (final def in defs) {
+        final protocol =
+            '${def.summary} ${def.recordText} ${def.steps.join(' ')}'
+                .toLowerCase();
+        expect(
+          protocol,
+          isNot(contains('critical force')),
+          reason: '${def.shortName} asks for a load-cell measurement',
+        );
+      }
+    });
+
+    test('the two finger tests vary load and edge size respectively', () {
+      final fs = MetricDefinitions.all[MetricId.fingerStrength]!;
+      final me = MetricDefinitions.all[MetricId.minEdge]!;
+      expect(fs.unit, '%BW');
+      expect(me.unit, 'mm');
+      // Min edge is the bodyweight test; if it ever grows a load field it has
+      // become edge tolerance again, which was cut for duplicating max hang.
+      expect(me.equipment.toLowerCase(), contains('no added weight'));
+    });
+
+    test('smaller is better on min edge', () {
+      final me = MetricDefinitions.all[MetricId.minEdge]!;
+      final range = me.maleNormativeRange!;
+      expect(range.best, lessThan(range.worst));
+      expect(range.percentileFor(range.best), 100);
+      expect(range.percentileFor(range.worst), 0);
+    });
+
+    test('campus rungs are scored on a reachable scale', () {
+      final campus = MetricDefinitions.all[MetricId.rfdContact]!;
+      // Rung 4 is a normal result and has to score as one; the old 2-9 range
+      // put it at the 29th percentile, so every user was told their contact
+      // strength was a weakness.
+      expect(campus.maleNormativeRange!.percentileFor(4), 50);
+      expect(campus.maleNormativeRange!.percentileFor(6), 100);
+      expect(campus.femaleNormativeRange!.percentileFor(3), 50);
+    });
+
+    test('power-endurance does not move a grade it cannot predict', () {
+      expect(MetricDefinitions.all[MetricId.powerEndurance]!.weight, 0);
     });
 
     test('explosive power does not reuse the campus-reach protocol', () {
@@ -100,25 +148,37 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('finger strength gets a 7s timer and the load calculator',
-        (tester) async {
+    testWidgets('finger strength records load, and times the hang off-app', (
+      tester,
+    ) async {
       await pumpTest(tester, MetricId.fingerStrength);
-      expect(find.byType(HangTimer), findsOneWidget);
       expect(find.byType(LoadCalculator), findsOneWidget);
-      expect(find.text('Edge size'), findsOneWidget);
-    });
-
-    testWidgets('finger endurance records %BW via the load calculator',
-        (tester) async {
-      await pumpTest(tester, MetricId.fingerEndurance);
-      expect(find.byType(LoadCalculator), findsOneWidget);
-      // A single-shot stopwatch cannot run a 4-minute 7:3 interval, so the
-      // screen must not pretend it can.
+      expect(find.text('Grip'), findsOneWidget);
+      // You cannot hang off both hands and work a stopwatch, and the edge is
+      // fixed at 20 mm because that is what the grade table is calibrated on.
       expect(find.byType(HangTimer), findsNothing);
+      expect(find.text('Edge size'), findsNothing);
     });
 
-    testWidgets('power endurance counts moves and offers no stopwatch',
-        (tester) async {
+    testWidgets('min edge picks an edge and takes no load', (tester) async {
+      await pumpTest(tester, MetricId.minEdge);
+      expect(find.byType(LoadCalculator), findsNothing);
+      expect(find.byType(HangTimer), findsNothing);
+      expect(
+        find.text('Smallest edge held for 7 s at bodyweight: 14 mm'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('10'));
+      await tester.pump();
+      expect(
+        find.text('Smallest edge held for 7 s at bodyweight: 10 mm'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('power endurance counts moves and offers no stopwatch', (
+      tester,
+    ) async {
       await pumpTest(tester, MetricId.powerEndurance);
       expect(find.text('Hand moves completed'), findsOneWidget);
       expect(find.byType(HangTimer), findsNothing);
@@ -130,8 +190,9 @@ void main() {
       expect(find.byType(HangTimer), findsOneWidget);
     });
 
-    testWidgets('campus reach offers rungs, not a decimal field',
-        (tester) async {
+    testWidgets('campus reach offers rungs, not a decimal field', (
+      tester,
+    ) async {
       await pumpTest(tester, MetricId.rfdContact);
       expect(find.text('Highest rung latched and held: 4'), findsOneWidget);
       await tester.tap(find.text('7'));
@@ -145,8 +206,9 @@ void main() {
       expect(find.text('Advanced tuck'), findsOneWidget);
     });
 
-    testWidgets('explosive power derives the gain from two measurements',
-        (tester) async {
+    testWidgets('explosive power derives the gain from two measurements', (
+      tester,
+    ) async {
       await pumpTest(tester, MetricId.explosivePower);
       expect(find.text('Static reach (cm)'), findsOneWidget);
       expect(find.text('Catch height (cm)'), findsOneWidget);
@@ -158,8 +220,9 @@ void main() {
       expect(find.text('55 cm'), findsOneWidget);
     });
 
-    testWidgets('hip flexion derives a ratio from two measurements',
-        (tester) async {
+    testWidgets('hip flexion derives a ratio from two measurements', (
+      tester,
+    ) async {
       await pumpTest(tester, MetricId.hipFlexion);
       await tester.enterText(find.byType(TextField).at(0), '100');
       await tester.enterText(find.byType(TextField).at(1), '90');

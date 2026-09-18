@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release signing. The upload keystore and its passwords must never be
+# committed: anyone holding them can publish updates as you, and Play cannot
+# rotate an upload key without a support request. (key.properties is already
+# covered by android/.gitignore.)
+**/*.jks
+**/*.keystore

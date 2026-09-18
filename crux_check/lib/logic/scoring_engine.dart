@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../models/assessment.dart';
 import '../models/enums.dart';
 
@@ -7,10 +9,100 @@ import '../models/enums.dart';
 class ScoringEngine {
   ScoringEngine._();
 
+  /// Body mass the %BW benchmark curves in [Benchmarks] are taken to be
+  /// calibrated at. Only the *deviation* from this mass is corrected, so the
+  /// curves stay valid as written.
+  static const double referenceMassKg = 70;
+
+  /// Softmin temperature. Picked so the canonical bottleneck profile — V12
+  /// pulling, V12 contact strength, V4 fingers — resolves to about V4.3
+  /// instead of the ~V9.3 a weighted mean reports.
+  static const double softminBeta = 0.5;
+
   /// %BW = (bodyweight + added load) / bodyweight * 100. [addedLoadKg] may
   /// be negative (assisted / removed weight).
   static double pctBWFromLoad(double bodyWeightKg, double addedLoadKg) {
     return (bodyWeightKg + addedLoadKg) / bodyWeightKg * 100;
+  }
+
+  /// Corrects a %BW figure for body size.
+  ///
+  /// Muscle force scales with cross-sectional area (~m^0.67) while %BW
+  /// divides by m^1, so a raw %BW number systematically flatters lighter
+  /// climbers and penalises heavier ones. Since S ∝ F/m^0.67 and F ∝ m·pctBW,
+  /// the size-independent index is proportional to pctBW·m^0.33.
+  ///
+  /// Expressed here as "the %BW an equally strong [referenceMassKg] climber
+  /// would show", which applies the correction without invalidating the
+  /// existing %BW-denominated benchmark curves. Returns [pctBW] unchanged
+  /// when bodyweight is unknown.
+  static double allometricPctBW(double pctBW, double bodyMassKg) {
+    if (bodyMassKg <= 0) return pctBW;
+    return pctBW * math.pow(bodyMassKg / referenceMassKg, 0.33).toDouble();
+  }
+
+  /// Weighted Softmin ("smooth minimum") over grade-equivalents.
+  ///
+  /// Climbing is bottleneck-limited: a climber with V12 pulling and V4
+  /// fingers climbs near V4, because elite pulling cannot be applied to a
+  /// hold the fingers will not hold. A weighted mean reports ~V9 for that
+  /// profile and hides the deficit. This biases hard toward the weakest
+  /// input while still letting strong metrics contribute a little:
+  ///
+  ///   J = Σ wᵢ·xᵢ·exp(-β·xᵢ) / Σ wⱼ·exp(-β·xⱼ)
+  ///
+  /// [beta] is the temperature — 0 collapses to the weighted mean, larger
+  /// values approach a hard minimum.
+  static double softminGrade(
+    Map<MetricId, double> gradesByMetric,
+    Map<MetricId, double> weightsByMetric, {
+    double beta = softminBeta,
+  }) {
+    if (gradesByMetric.isEmpty) return 0;
+    // Factored around the smallest grade so the exponentials stay in (0, 1]
+    // and cannot overflow on a grade the benchmark table extrapolated below
+    // V0. The factor cancels between numerator and denominator.
+    final minGrade = gradesByMetric.values.reduce(math.min);
+    double numerator = 0;
+    double denominator = 0;
+    for (final entry in gradesByMetric.entries) {
+      final w = weightsByMetric[entry.key] ?? 0;
+      if (w <= 0) continue;
+      final term = w * math.exp(-beta * (entry.value - minGrade));
+      numerator += term * entry.value;
+      denominator += term;
+    }
+    if (denominator == 0) return 0;
+    return numerator / denominator;
+  }
+
+  /// Tier 2 metrics modify the ceiling instead of setting it: they lack the
+  /// predictive validity to anchor a grade on their own, but a genuinely
+  /// weak core or hip range still costs grades. Maps a 0-100 normative
+  /// percentile onto 0.90..1.10, centred so an average result changes
+  /// nothing.
+  static double tier2Multiplier(double percentile) {
+    return 0.90 + (percentile.clamp(0, 100) / 100) * 0.20;
+  }
+
+  /// Experience optimises the application of physical traits; it does not
+  /// generate force. So it scales the physical ceiling rather than being
+  /// averaged into it, on a log curve — the first seasons teach far more
+  /// than the tenth — bounded to 0.92..1.05 so it can never overwrite a
+  /// physical bottleneck.
+  static double experienceMultiplier(double experienceIndex) {
+    final x = experienceIndex.clamp(0.0, 100.0) / 100;
+    final curve = math.log(1 + 9 * x) / math.ln10;
+    return 0.92 + curve * 0.13;
+  }
+
+  /// Pulling strength stops tracking grade once it plateaus (male ~160-165
+  /// %BW, female ~135-140, both around V10): across the four grades above
+  /// that, average pulling barely moves. Compresses the excess so a big
+  /// weighted pull-up cannot keep inflating the pulling sub-grade.
+  static double plateauPullingGrade(double grade, {double plateau = 10}) {
+    if (grade <= plateau) return grade;
+    return plateau + (grade - plateau) * 0.4;
   }
 
   /// Inverts a monotonically-increasing grade -> value benchmark table to
@@ -73,11 +165,6 @@ class ScoringEngine {
     return sumWG / sumW;
   }
 
-  /// Step 4: predicted / experience-typical grade.
-  static double predictedGrade(double gradeCeiling, double gradeExperience) {
-    return 0.86 * gradeCeiling + 0.14 * gradeExperience;
-  }
-
   /// Step 5: confidence half-width, in V-grades, around [predictedGrade].
   ///
   /// Widens for: grades above V10 (encodes the measured R² decline at
@@ -102,7 +189,7 @@ class ScoringEngine {
     final mean = values.reduce((a, b) => a + b) / values.length;
     final variance =
         values.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) /
-            values.length;
+        values.length;
     return variance <= 0 ? 0 : _sqrt(variance);
   }
 
@@ -123,11 +210,17 @@ class ScoringEngine {
     Map<MetricId, double> gradesByMetric, {
     int top = 3,
   }) {
-    final deficits = gradesByMetric.entries
-        .map((e) => LimitingFactor(metricId: e.key, deficit: gradeCeiling - e.value))
-        .where((d) => d.deficit > 0.25)
-        .toList()
-      ..sort((a, b) => b.deficit.compareTo(a.deficit));
+    final deficits =
+        gradesByMetric.entries
+            .map(
+              (e) => LimitingFactor(
+                metricId: e.key,
+                deficit: gradeCeiling - e.value,
+              ),
+            )
+            .where((d) => d.deficit > 0.25)
+            .toList()
+          ..sort((a, b) => b.deficit.compareTo(a.deficit));
     return deficits.take(top).toList();
   }
 }

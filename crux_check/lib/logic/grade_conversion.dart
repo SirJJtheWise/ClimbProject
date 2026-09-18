@@ -1,3 +1,5 @@
+import '../models/enums.dart';
+
 /// V-grade <-> Font (Fontainebleau) conversion.
 ///
 /// Community-consensus approximate mapping per the spec; widen uncertainty
@@ -47,4 +49,17 @@ String fontRangeLabel(double low, double high) {
   final hi = high.round().clamp(0, 17);
   if (lo == hi) return _vToFontTable[lo] ?? '9A+';
   return '${_vToFontTable[lo]}–${_vToFontTable[hi]}';
+}
+
+/// Every grade shown to the user goes through these two, so the scale picked
+/// during onboarding actually reaches the screen. Grades are computed in
+/// V-scale throughout and only converted at the point of display.
+String gradeLabel(double vGrade, GradeScale scale) {
+  return scale == GradeScale.font ? vToFont(vGrade) : vGradeLabel(vGrade);
+}
+
+String gradeRangeLabel(double low, double high, GradeScale scale) {
+  return scale == GradeScale.font
+      ? fontRangeLabel(low, high)
+      : vRangeLabel(low, high);
 }

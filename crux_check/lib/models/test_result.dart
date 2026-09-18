@@ -1,3 +1,4 @@
+import 'assessment.dart' show knownMetric;
 import 'enums.dart';
 
 enum GripType { halfCrimp, openCrimp, fullCrimp }
@@ -61,5 +62,17 @@ class TestResult {
           : GripType.values.byName(map['gripType'] as String),
       hitTrueMax: (map['hitTrueMax'] as int? ?? 1) == 1,
     );
+  }
+
+  /// Rows written by an older build can name a metric this version no longer
+  /// has — finger endurance and edge tolerance were both removed. The stored
+  /// database outlives the enum, so an unrecognised name is expected data
+  /// rather than corruption: the row is skipped instead of failing the whole
+  /// load. The row is left in place, so removed results are not destroyed and
+  /// come back if the metric ever returns.
+  static TestResult? tryFromMap(Map<String, Object?> map) {
+    return knownMetric(map['metricId']) == null
+        ? null
+        : TestResult.fromMap(map);
   }
 }

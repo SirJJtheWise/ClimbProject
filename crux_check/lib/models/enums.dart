@@ -2,18 +2,15 @@ enum Sex { male, female }
 
 enum GradeScale { v, font }
 
-/// The 15 metrics from the spec. [edgeTolerance] is a profiling-only
-/// sub-metric that folds into the finger-strength card and carries no
-/// independent weight in the composite (see MetricDef.weight == 0).
+/// The 14 metrics from the spec.
 enum MetricId {
   fingerStrength,
   pullingStrength,
   rfdContact,
   explosivePower,
   lockOff,
-  edgeTolerance,
   powerEndurance,
-  fingerEndurance,
+  minEdge,
   core,
   hipAbduction,
   hipFlexion,

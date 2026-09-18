@@ -14,10 +14,10 @@ class MetricPercentile {
   });
 
   Map<String, Object?> toJson() => {
-        'metricId': metricId.name,
-        'percentile': percentile,
-        'gradeEquivalent': gradeEquivalent,
-      };
+    'metricId': metricId.name,
+    'percentile': percentile,
+    'gradeEquivalent': gradeEquivalent,
+  };
 
   factory MetricPercentile.fromJson(Map<String, Object?> json) {
     return MetricPercentile(
@@ -26,6 +26,24 @@ class MetricPercentile {
       gradeEquivalent: (json['gradeEquivalent'] as num).toDouble(),
     );
   }
+
+  /// Null when the stored entry names a metric this version has removed.
+  static MetricPercentile? tryFromJson(Map<String, Object?> json) {
+    return knownMetric(json['metricId']) == null
+        ? null
+        : MetricPercentile.fromJson(json);
+  }
+}
+
+/// The saved metric name if the current [MetricId] enum still has it, else
+/// null. Persisted records outlive the catalogue, so callers reading history
+/// treat an unknown name as a row to skip rather than an error.
+MetricId? knownMetric(Object? storedName) {
+  if (storedName is! String) return null;
+  for (final metric in MetricId.values) {
+    if (metric.name == storedName) return metric;
+  }
+  return null;
 }
 
 class LimitingFactor {
@@ -35,15 +53,22 @@ class LimitingFactor {
   const LimitingFactor({required this.metricId, required this.deficit});
 
   Map<String, Object?> toJson() => {
-        'metricId': metricId.name,
-        'deficit': deficit,
-      };
+    'metricId': metricId.name,
+    'deficit': deficit,
+  };
 
   factory LimitingFactor.fromJson(Map<String, Object?> json) {
     return LimitingFactor(
       metricId: MetricId.values.byName(json['metricId'] as String),
       deficit: (json['deficit'] as num).toDouble(),
     );
+  }
+
+  /// Null when the stored entry names a metric this version has removed.
+  static LimitingFactor? tryFromJson(Map<String, Object?> json) {
+    return knownMetric(json['metricId']) == null
+        ? null
+        : LimitingFactor.fromJson(json);
   }
 }
 
@@ -84,10 +109,12 @@ class Assessment {
       'gradeExperience': gradeExperience,
       'confidenceLow': confidenceLow,
       'confidenceHigh': confidenceHigh,
-      'perMetricPercentiles':
-          jsonEncode(perMetricPercentiles.map((e) => e.toJson()).toList()),
-      'limitingFactors':
-          jsonEncode(limitingFactors.map((e) => e.toJson()).toList()),
+      'perMetricPercentiles': jsonEncode(
+        perMetricPercentiles.map((e) => e.toJson()).toList(),
+      ),
+      'limitingFactors': jsonEncode(
+        limitingFactors.map((e) => e.toJson()).toList(),
+      ),
       'missingMetricCount': missingMetricCount,
     };
   }
@@ -105,11 +132,19 @@ class Assessment {
       gradeExperience: (map['gradeExperience'] as num).toDouble(),
       confidenceLow: (map['confidenceLow'] as num).toDouble(),
       confidenceHigh: (map['confidenceHigh'] as num).toDouble(),
+      // A stored assessment names the metrics it scored. Metrics get removed
+      // from the catalogue (finger endurance, edge tolerance), so an entry
+      // for one this version no longer has is dropped rather than failing the
+      // whole history load.
       perMetricPercentiles: percentilesJson
-          .map((e) => MetricPercentile.fromJson(Map<String, Object?>.from(e)))
+          .map(
+            (e) => MetricPercentile.tryFromJson(Map<String, Object?>.from(e)),
+          )
+          .whereType<MetricPercentile>()
           .toList(),
       limitingFactors: limitingJson
-          .map((e) => LimitingFactor.fromJson(Map<String, Object?>.from(e)))
+          .map((e) => LimitingFactor.tryFromJson(Map<String, Object?>.from(e)))
+          .whereType<LimitingFactor>()
           .toList(),
       missingMetricCount: map['missingMetricCount'] as int,
     );

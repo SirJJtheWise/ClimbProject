@@ -32,8 +32,9 @@ Future<void> showProtocolSheet(BuildContext context, MetricDef def) {
               const SizedBox(height: AppSpacing.md),
               Text(
                 def.summary,
-                style: theme.textTheme.bodyLarge
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               const _SheetLabel('What you need'),
               _IconLine(icon: Icons.inventory_2_outlined, text: def.equipment),
@@ -62,8 +63,9 @@ Future<void> showProtocolSheet(BuildContext context, MetricDef def) {
               const _SheetLabel('Evidence'),
               Text(
                 def.evidenceNote,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               _ConfidenceChip(strength: def.evidenceStrength.name),
@@ -84,8 +86,7 @@ class _SheetLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding:
-          const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.md),
       child: Text(
         text.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(
@@ -125,8 +126,9 @@ class _Step extends StatelessWidget {
             ),
             child: Text(
               '$number',
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(color: scheme.onPrimaryContainer),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onPrimaryContainer,
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -164,8 +166,9 @@ class _Bullet extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -195,8 +198,9 @@ class _IconLine extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
@@ -237,13 +241,17 @@ class _Callout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style:
-                        theme.textTheme.titleSmall?.copyWith(color: foreground)),
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: foreground,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(body,
-                    style:
-                        theme.textTheme.bodySmall?.copyWith(color: foreground)),
+                Text(
+                  body,
+                  style: theme.textTheme.bodySmall?.copyWith(color: foreground),
+                ),
               ],
             ),
           ),
@@ -269,7 +277,9 @@ class _ConfidenceChip extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.pillRadius),
           border: Border.all(color: scheme.outlineVariant),
@@ -277,13 +287,17 @@ class _ConfidenceChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.science_outlined,
-                size: 14, color: scheme.onSurfaceVariant),
+            Icon(
+              Icons.science_outlined,
+              size: 14,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(width: AppSpacing.sm),
             Text(
               'Evidence confidence: $strength',
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

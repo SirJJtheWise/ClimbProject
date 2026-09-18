@@ -19,16 +19,16 @@ enum LevelBand {
   /// in 12 men can't separate the red from the green — so every place that
   /// tints by band also shows this word or [icon].
   String get label => switch (this) {
-        LevelBand.weak => 'Weak spot',
-        LevelBand.atLevel => 'At level',
-        LevelBand.strong => 'Strength',
-      };
+    LevelBand.weak => 'Weak spot',
+    LevelBand.atLevel => 'At level',
+    LevelBand.strong => 'Strength',
+  };
 
   IconData get icon => switch (this) {
-        LevelBand.weak => Icons.trending_down,
-        LevelBand.atLevel => Icons.trending_flat,
-        LevelBand.strong => Icons.trending_up,
-      };
+    LevelBand.weak => Icons.trending_down,
+    LevelBand.atLevel => Icons.trending_flat,
+    LevelBand.strong => Icons.trending_up,
+  };
 }
 
 /// The single red/amber/green semantic scale for "how strong is this

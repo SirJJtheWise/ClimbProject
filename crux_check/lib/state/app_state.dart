@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../data/db_helper.dart';
+import '../data/safety_disclaimer.dart';
 import '../logic/assessment_calculator.dart';
 import '../models/assessment.dart';
 import '../models/body_measurement.dart';
@@ -21,11 +22,55 @@ class AppState extends ChangeNotifier {
   AssessmentResult? latestResultDetail;
   bool loading = true;
 
+  static const String _disclaimerKey = 'disclaimerAcceptedVersion';
+  static const String _disclaimerAtKey = 'disclaimerAcceptedAt';
+
+  /// Which version of the safety disclaimer this install has accepted. 0 means
+  /// none, which is also what an install predating the disclaimer reports.
+  int acceptedDisclaimerVersion = 0;
+
+  /// When that acceptance happened. The version alone says what was agreed
+  /// to; the timestamp is what makes it evidence that it was agreed to at a
+  /// particular time, which costs nothing to keep and cannot be reconstructed
+  /// later.
+  DateTime? disclaimerAcceptedAt;
+
+  bool get needsDisclaimer =>
+      acceptedDisclaimerVersion < SafetyDisclaimer.version;
+
+  Future<void> acceptDisclaimer() async {
+    final now = DateTime.now();
+    await _db.setMeta(_disclaimerKey, '${SafetyDisclaimer.version}');
+    await _db.setMeta(_disclaimerAtKey, now.toIso8601String());
+    acceptedDisclaimerVersion = SafetyDisclaimer.version;
+    disclaimerAcceptedAt = now;
+    notifyListeners();
+  }
+
+  /// Erases everything and returns to the first-launch state. Irreversible:
+  /// nothing is sent anywhere, so there is no copy to restore from.
+  Future<void> deleteAllData() async {
+    await _db.deleteAllData();
+    user = null;
+    latestBody = null;
+    latestResults = {};
+    latestAssessment = null;
+    latestResultDetail = null;
+    acceptedDisclaimerVersion = 0;
+    disclaimerAcceptedAt = null;
+    notifyListeners();
+  }
+
   Future<void> loadFromDb() async {
     loading = true;
     notifyListeners();
 
     try {
+      acceptedDisclaimerVersion =
+          int.tryParse(await _db.getMeta(_disclaimerKey) ?? '') ?? 0;
+      disclaimerAcceptedAt = DateTime.tryParse(
+        await _db.getMeta(_disclaimerAtKey) ?? '',
+      );
       user = await _db.getFirstUser();
       if (user != null) {
         final uid = user!.id!;
@@ -111,9 +156,7 @@ class AppState extends ChangeNotifier {
     final values = <MetricId, double>{};
     for (final entry in latestResults.entries) {
       if (entry.key == MetricId.fingerStrength ||
-          entry.key == MetricId.pullingStrength ||
-          entry.key == MetricId.edgeTolerance ||
-          entry.key == MetricId.fingerEndurance) {
+          entry.key == MetricId.pullingStrength) {
         values[entry.key] = entry.value.computedPctBW ?? entry.value.rawValue;
       } else {
         values[entry.key] = entry.value.rawValue;
@@ -135,6 +178,7 @@ class AppState extends ChangeNotifier {
       user: user!,
       rawValues: rawValues,
       lowConfidenceMetricIds: lowConfidence,
+      bodyWeightKg: latestBody?.weightKg ?? 0,
     );
   }
 
@@ -144,7 +188,13 @@ class AppState extends ChangeNotifier {
   /// [runAssessment], this never writes to the DB or touches
   /// [latestAssessment]/history, so it's safe to read on every rebuild
   /// (e.g. from the Test hub's live star-plot preview).
-  AssessmentResult? get livePreview => user == null ? null : _computeLive();
+  AssessmentResult? get livePreview {
+    if (user == null) return null;
+    final result = _computeLive();
+    // Arm span alone is not a prediction. Callers treat null as "no estimate
+    // yet" and show the empty state.
+    return result.insufficientData ? null : result;
+  }
 
   Future<AssessmentResult> runAssessment() async {
     final result = _computeLive();

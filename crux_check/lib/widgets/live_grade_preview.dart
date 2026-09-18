@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/metric_definitions.dart';
 import '../logic/assessment_calculator.dart';
 import '../logic/grade_conversion.dart';
+import '../models/enums.dart';
 import '../theme/app_theme.dart';
 import 'metric_radar_chart.dart';
 
@@ -19,10 +20,16 @@ class LiveGradePreview extends StatelessWidget {
   final AssessmentResult? preview;
   final bool hasAnyTest;
 
+  /// Passed in rather than read from AppState, so this stays a presentational
+  /// widget that renders from its arguments alone — it is exercised in design
+  /// and preview tests that have no provider above them.
+  final GradeScale gradeScale;
+
   const LiveGradePreview({
     super.key,
     required this.preview,
     required this.hasAnyTest,
+    this.gradeScale = GradeScale.v,
   });
 
   @override
@@ -34,8 +41,11 @@ class LiveGradePreview extends StatelessWidget {
       return _PreviewShell(
         child: Row(
           children: [
-            Icon(Icons.auto_graph_rounded,
-                color: scheme.onPrimaryContainer, size: 28),
+            Icon(
+              Icons.auto_graph_rounded,
+              color: scheme.onPrimaryContainer,
+              size: 28,
+            ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -43,15 +53,17 @@ class LiveGradePreview extends StatelessWidget {
                 children: [
                   Text(
                     'No estimate yet',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: scheme.onPrimaryContainer),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Record any test below and your grade estimate appears '
                     'here instantly.',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: scheme.onPrimaryContainer),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                 ],
               ),
@@ -63,10 +75,12 @@ class LiveGradePreview extends StatelessWidget {
 
     final assessment = preview!.assessment;
     final axes = assessment.perMetricPercentiles
-        .map((p) => RadarAxis(
-              MetricDefinitions.all[p.metricId]!.shortName,
-              p.percentile,
-            ))
+        .map(
+          (p) => RadarAxis(
+            MetricDefinitions.all[p.metricId]!.shortName,
+            p.percentile,
+          ),
+        )
         .toList();
 
     return _PreviewShell(
@@ -88,7 +102,7 @@ class LiveGradePreview extends StatelessWidget {
               showLabels: false,
             ),
           );
-          final summary = _Summary(preview: preview!);
+          final summary = _Summary(preview: preview!, gradeScale: gradeScale);
 
           if (stacked) {
             return Column(
@@ -136,8 +150,9 @@ class _PreviewShell extends StatelessWidget {
 
 class _Summary extends StatelessWidget {
   final AssessmentResult preview;
+  final GradeScale gradeScale;
 
-  const _Summary({required this.preview});
+  const _Summary({required this.preview, required this.gradeScale});
 
   @override
   Widget build(BuildContext context) {
@@ -163,18 +178,25 @@ class _Summary extends StatelessWidget {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 350),
           child: Text(
-            vRangeLabel(assessment.confidenceLow, assessment.confidenceHigh),
+            gradeRangeLabel(
+              assessment.confidenceLow,
+              assessment.confidenceHigh,
+              gradeScale,
+            ),
             key: ValueKey(
-                '${assessment.confidenceLow}-${assessment.confidenceHigh}'),
-            style: theme.textTheme.headlineMedium
-                ?.copyWith(color: scheme.onPrimaryContainer),
+              '${assessment.confidenceLow}-${assessment.confidenceHigh}',
+            ),
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: scheme.onPrimaryContainer,
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'most likely ${vGradeLabel(assessment.gradeComposite)}',
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: scheme.onPrimaryContainer),
+          'most likely ${gradeLabel(assessment.gradeComposite, gradeScale)}',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: scheme.onPrimaryContainer,
+          ),
         ),
         if (preview.anchorIsFallback) ...[
           const SizedBox(height: AppSpacing.md),
@@ -183,7 +205,9 @@ class _Summary extends StatelessWidget {
           // contrast gamble, and this is a nudge, not a failure.
           Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
+            ),
             decoration: BoxDecoration(
               color: scheme.surface,
               borderRadius: BorderRadius.circular(AppTheme.controlRadius),
@@ -191,15 +215,19 @@ class _Summary extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded,
-                    size: 16, color: scheme.onSurfaceVariant),
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: scheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     'Rough — add a finger or pulling strength test to anchor '
                     'this.',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],

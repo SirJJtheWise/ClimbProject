@@ -46,9 +46,12 @@ class MetricCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final tested = latest != null;
-    final band = percentile == null ? null : LevelBand.forPercentile(percentile!);
-    final level =
-        percentile == null ? null : FunLevels.levelForPercentile(percentile!);
+    final band = percentile == null
+        ? null
+        : LevelBand.forPercentile(percentile!);
+    final level = percentile == null
+        ? null
+        : FunLevels.levelForPercentile(percentile!);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -58,7 +61,11 @@ class MetricCard extends StatelessWidget {
           onTap: onTest,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, AppSpacing.md, AppSpacing.sm, AppSpacing.md),
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -83,7 +90,9 @@ class MetricCard extends StatelessWidget {
                             flex: 2,
                             child: tested
                                 ? _ValueLabel(
-                                    figure: _value.$1, unit: _value.$2)
+                                    figure: _value.$1,
+                                    unit: _value.$2,
+                                  )
                                 : Text(
                                     'Untested',
                                     textAlign: TextAlign.right,
@@ -101,6 +110,10 @@ class MetricCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (percentile != null) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  _SideScaleBar(percentile: percentile!),
+                ],
                 const SizedBox(width: AppSpacing.xs),
                 IconButton(
                   icon: const Icon(Icons.info_outline),
@@ -154,6 +167,50 @@ class _ValueLabel extends StatelessWidget {
   }
 }
 
+/// The percentile as a vertical fill rather than a number — a scale you
+/// can read at arm's length across a whole list of cards, the way the
+/// [_LevelChip] text can't be. Sits at the trailing edge of the row, next
+/// to the info button, so it reads as "how full is this bar" rather than
+/// competing with the value column for the same space.
+class _SideScaleBar extends StatelessWidget {
+  final double percentile;
+
+  const _SideScaleBar({required this.percentile});
+
+  @override
+  Widget build(BuildContext context) {
+    final band = LevelBand.forPercentile(percentile);
+    final color = band.color(context);
+    final fraction = (percentile / 100).clamp(0.0, 1.0);
+
+    return Semantics(
+      label: '${band.label}, ${percentile.round()}th percentile',
+      excludeSemantics: true,
+      child: SizedBox(
+        width: 8,
+        height: 40,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+          child: Container(
+            color: band.surface(context),
+            alignment: Alignment.bottomCenter,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: fraction),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, _) => FractionallySizedBox(
+                heightFactor: value,
+                widthFactor: 1,
+                child: ColoredBox(color: color),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Tested/untested at a glance. The glyph carries the meaning, the fill
 /// only reinforces it — an untested row reads as a quiet outline rather
 /// than a competing coloured badge.
@@ -176,8 +233,7 @@ class _StatusDot extends StatelessWidget {
       child: Icon(
         tested ? Icons.check_rounded : Icons.remove_rounded,
         size: 20,
-        color:
-            tested ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+        color: tested ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
       ),
     );
   }
