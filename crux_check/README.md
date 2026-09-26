@@ -67,6 +67,33 @@ their reasoning attached. Refit them first when real outcome data exists.
 rights) and no product names (trademarks). Both have already had to be removed
 once.
 
+## App icon
+
+Sources live in `assets/icon/`. `logo-original.jpeg` is the artwork as
+supplied; everything else is derived from it.
+
+```bash
+dart run flutter_launcher_icons
+```
+
+Two things about the derivation are deliberate and easy to undo by accident:
+
+- **The original is reframed.** It arrived 4:3 with the climber filling under a
+  third of the width, which is a speck at 48 dp. `icon.png` crops to the ink
+  bounding box and scales the figure to 78% of a square tile.
+- **`icon_foreground.png` is a different size on purpose.** Android composites
+  adaptive icons with a 16% inset and then masks the outer third away, so the
+  foreground is scaled to land the figure at ~57% of the finished tile — just
+  inside the circle the mask guarantees. Reusing `icon.png` as the foreground
+  would crop the climber's hands and feet off.
+
+Play listing assets are generated alongside: `play_store_512.png` and
+`play_feature_graphic_1024x500.png`.
+
+The launch screen is the brand ground colour only (`launch_background` in
+`values/colors.xml`, with a `values-night` variant), so a cold start does not
+flash white before Flutter's first frame.
+
 ## Releasing to Play
 
 Requires a JDK, not just a JRE (`sudo apt install openjdk-21-jdk`).
@@ -79,14 +106,9 @@ Requires a JDK, not just a JRE (`sudo apt install openjdk-21-jdk`).
      -keyalg RSA -keysize 2048 -validity 10000 -alias upload
    ```
 
-2. Create `android/key.properties` (gitignored, never commit it):
-
-   ```properties
-   storePassword=<password>
-   keyPassword=<password>
-   keyAlias=upload
-   storeFile=/home/<you>/crux-upload.jks
-   ```
+2. Copy `android/key.properties.example` to `android/key.properties` and fill
+   it in. `storeFile` must be an **absolute** path — Gradle resolves relative
+   paths there against `android/app/`, which is never what you meant.
 
 3. Build the bundle:
 
@@ -97,6 +119,17 @@ Requires a JDK, not just a JRE (`sudo apt install openjdk-21-jdk`).
    Without `key.properties` the release build falls back to debug signing so it
    still runs locally — but Play rejects debug-signed bundles, so that output
    is not publishable.
+
+4. Verify before uploading:
+
+   ```bash
+   ./tool/verify_signing.sh
+   ```
+
+   This exists because the fallback in step 3 fails silently: a debug-signed
+   bundle builds without a single warning and is only rejected once Play has
+   it. The script compares the bundle's certificate against
+   `~/.android/debug.keystore` and refuses the debug key.
 
 The `.aab` is around 57 MB, most of which is debug symbols for crash
 deobfuscation plus three ABIs. Play splits it per device; the actual download

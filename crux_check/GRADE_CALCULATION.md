@@ -16,8 +16,8 @@ Main files:
 
 ## The short version
 
-Force results are size-corrected, then finger strength is converted to a
-V-grade through a lookup curve to give the **anchor**. The three **Tier 1**
+Finger strength is converted to a V-grade through a lookup curve to give the
+**anchor**. The three **Tier 1**
 metrics are combined with a **Softmin** — a smooth minimum — so the weakest one
 sets the ceiling instead of being averaged away. Everything else is **Tier 2**
 and only nudges that ceiling by a multiplier. Experience scales the result on a
@@ -28,7 +28,7 @@ resource, not the average one. A climber with V12 pulling and V4 fingers
 climbs near V4, because elite pulling cannot be applied to a hold the fingers
 will not hold.
 
-## Step 0 — Gathering and correcting inputs
+## Step 0 — Gathering inputs
 
 `AppState._rawValuesForCalculator()` builds a `Map<MetricId, double>`:
 
@@ -37,22 +37,24 @@ will not hold.
 - `bodyComposition` comes from the latest body measurement, not a test result.
 - `apeIndex` is auto-filled by the calculator from the user profile.
 
-The two force anchors are then **size-corrected** before they meet the %BW
-curves:
+No size correction is applied. An allometric one (`pctBW × (m/70)^0.33`)
+was tried and removed: the physics is right — muscle force scales with
+cross-section, so a heavier climber at equal %BW is relatively stronger — but
+the correction cannot be fed into these particular tables.
 
-```
-allometricPctBW(pctBW, m) = pctBW * (m / 70) ^ 0.33
-```
+`pullUpPctBWMale` and the finger curve are **%BW observed at each grade across
+climbers of all body masses**. They were never normalised to a 70 kg
+reference, so converting a climber's %BW to a "70 kg-equivalent" and then
+looking it up compares a size-corrected number against an uncorrected
+distribution. The effect was not small: the same 134 %BW pull read V5.8 at
+55 kg and V10.2 at 100 kg — a 4.4-grade spread for identical relative
+strength, worst on pulling because that curve is flattest (5 %BW per grade).
 
-Muscle force scales with cross-sectional area (≈ m^0.67) while %BW divides by
-m^1, so raw %BW systematically flatters lighter climbers. Since S ∝ F/m^0.67
-and F ∝ m·pctBW, the size-independent index is ∝ pctBW·m^0.33. This is
-expressed as "the %BW an equally strong 70 kg climber would show", which
-applies the physics **without invalidating the existing %BW benchmark tables**.
-Bodyweight unknown → returned unchanged.
-
-Effect: 170 %BW reads as 157 at 55 kg, 170 at 70 kg, 181 at 85 kg — about two
-grades of spread across that range.
+There is also a climbing-specific argument. Allometric scaling measures
+muscular quality independent of size, but climbing means lifting *your own
+mass*; %BW is much closer to the quantity that decides whether you get up the
+wall. Reinstating a correction would mean rebuilding both benchmark tables
+from size-corrected source data, which the published numbers do not support.
 
 ### Insufficient data
 
@@ -186,6 +188,15 @@ Measured against the weighted **mean**, not the Softmin ceiling. The ceiling
 already sits down at the weakest metric, so comparing against it would surface
 nothing — the deficit that matters is the one dragging the Softmin down.
 
+⚠️ **The limiter card overstates this.** It reads "X is holding you back by
+about N grades", where N is `deficit_i`. That is how far the metric sits below
+your average, not what fixing it would gain you, and under a Softmin the two
+diverge badly: a Tier 2 metric is a multiplier bounded to 0.90–1.10, so fixing
+it can never be worth the grades the card claims, while the true bottleneck is
+usually worth more. The replacement — ranking by a counterfactual re-score
+instead — is specified as Steps 8–10 under "Weakness Analysis" in the project
+spec, and is not built yet.
+
 ## Step 7 — Display percentiles
 
 Where a normative range exists, the **raw normative percentile is reported
@@ -201,11 +212,9 @@ displayed = clamp(50 + (grade_i - predicted) / 3 * 50, 0, 100)
 
 ## Worked example
 
-Male, 70 kg, 20 mm two-arm max hang at 150 %BW, core level 6.
+Male, 20 mm two-arm max hang at 150 %BW, core level 6.
 
 ```
-0. 150 %BW at 70 kg -> 150 (reference mass, no correction)
-
 1. oneArmEquiv = 150 * 0.5 - 15 = 60
    curve: V5 = 55, V6 = 61  ->  anchor = 5 + (60-55)/(61-55) = 5.833
 
@@ -250,7 +259,7 @@ Reported as roughly **V6, V4–V8**.
    have tests asserting they are reachable.
 
 6. **The benchmark curves are priors**, and so are the tuned constants here:
-   β = 0.5, the 0.90–1.10 Tier 2 band, the 0.92–1.05 experience band, the
-   70 kg reference mass and the V10 pulling plateau. All are named constants
+   β = 0.5, the 0.90–1.10 Tier 2 band, the 0.92–1.05 experience band, and the
+   V10 pulling plateau. All are named constants
    in `scoring_engine.dart` and all are the first things to refit against real
    outcome data.

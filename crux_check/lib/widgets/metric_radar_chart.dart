@@ -18,18 +18,7 @@ class MetricRadarChart extends StatelessWidget {
   /// the accent itself would sit on its own container there.
   final Color? color;
 
-  /// Axis names around the outside. Turn off below roughly 200dp: metric
-  /// names like "Pulling strength" are wider than the radius there and
-  /// overlap the plot itself, which makes the shape harder to read rather
-  /// than easier. The full-size chart on Results keeps them.
-  final bool showLabels;
-
-  const MetricRadarChart({
-    super.key,
-    required this.axes,
-    this.color,
-    this.showLabels = true,
-  });
+  const MetricRadarChart({super.key, required this.axes, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -81,18 +70,19 @@ class MetricRadarChart extends StatelessWidget {
               color: Colors.transparent,
               fontSize: 0,
             ),
+            // No axis titles. fl_chart draws them past the polygon without
+            // clipping or wrapping, so any name long enough to read either
+            // breaks out of the card or lands on its own data point — there
+            // is no offset that avoids both. The LevelBar list directly
+            // below names every axis with its grade, so nothing is lost.
+            titleTextStyle: const TextStyle(
+              color: Colors.transparent,
+              fontSize: 0,
+            ),
+            titlePositionPercentageOffset: 0,
+            getTitle: (index, angle) => const RadarChartTitle(text: ''),
             radarBorderData: BorderSide(color: ink.withValues(alpha: 0.35)),
             gridBorderData: BorderSide(color: ink.withValues(alpha: 0.2)),
-            titleTextStyle: showLabels
-                ? theme.textTheme.labelSmall?.copyWith(
-                    color: ink,
-                    letterSpacing: 0.2,
-                  )
-                : const TextStyle(color: Colors.transparent, fontSize: 0),
-            titlePositionPercentageOffset: showLabels ? 0.18 : 0,
-            getTitle: (index, angle) {
-              return RadarChartTitle(text: showLabels ? axes[index].label : '');
-            },
             dataSets: [
               RadarDataSet(
                 fillColor: ink.withValues(alpha: 0.22),

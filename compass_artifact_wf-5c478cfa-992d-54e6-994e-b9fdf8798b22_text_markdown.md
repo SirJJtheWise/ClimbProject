@@ -91,6 +91,121 @@ V0≈4/4+, V1≈5, V2≈5+, V3≈6A/6A+, V4≈6B/6B+, V5≈6C/6C+, V6≈7A, V7�
 
 **Step 7 — Per-metric percentile.** Percentile = the user's Gᵢ relative to the reference distribution at their predicted grade (benchmark tables + normative SDs as the reference).
 
+
+### Weakness Analysis
+
+Runs after the grade analysis and consumes its output. Step 6 above detects
+limiting factors as `deficit_i = G_ceiling − G_i` and surfaces the largest.
+That was written against a weighted-mean ceiling. The ceiling is now a Softmin
+(see GRADE_CALCULATION.md), and under a Softmin that definition is wrong in a
+way that matters:
+
+- **Distance below the mean is not what fixing it would buy you.** A Tier 2
+  metric enters the ceiling as a multiplier bounded to 0.90–1.10, so however
+  far below average it sits, fixing it moves the estimate by at most a tenth
+  of the ceiling. A Tier 1 metric sitting at the bottleneck can be worth two
+  grades. Both can show the same `deficit`.
+- **The current copy overstates this.** The limiter card says "X is holding
+  you back by about N grades", where N is the deficit. For anything except
+  the true bottleneck that is not true.
+- **Untested is not weak.** A metric with no result is absent from the
+  ranking entirely, so the thing most likely to be holding someone back is
+  invisible precisely when they have not measured it.
+
+#### Step 8 — Counterfactual weakness ranking
+
+For each scored metric, re-run the ceiling with that metric alone raised to a
+target, and take the difference:
+
+```
+gain_i = ceiling(metrics with G_i := target_i) − ceiling(metrics as recorded)
+```
+
+`target_i` is the user's own reference level, not a world-class one — the
+weighted mean of their scored grade-equivalents, which is the same reference
+Step 6 already uses for deficits. The question being answered is "what if this
+one thing caught up with the rest of you", not "what if you were an elite
+climber".
+
+Rank by `gain_i` descending. This is the weakness list. It falls out of the
+Softmin for free: the function is already a smooth minimum, so the derivative
+with respect to the bottleneck is large and with respect to everything else is
+near zero. The ranking is therefore doing real work rather than restating the
+percentile chart.
+
+Thresholds:
+
+- `gain_i < 0.2` grades → not a weakness, do not surface it. Below this the
+  number is model noise, and a list that always has three entries trains
+  people to ignore it.
+- Surface at most three. More than that is not a training plan.
+
+**Gains are not additive.** Fixing the worst metric promotes the next one to
+bottleneck, so the individual gains must never be summed in the UI. If a
+combined figure is ever wanted, compute it jointly by raising all the named
+metrics at once and re-running the ceiling.
+
+#### Step 9 — Unknowns
+
+Untested metrics are reported separately from weaknesses, as a shortlist of
+what to measure next. Rank them by information value: the metrics whose
+absence currently widens the confidence band most (the high-weight set in
+`_highWeightMetrics`), Tier 1 before Tier 2.
+
+An unknown is never presented as a deficiency. The copy is "this could change
+your estimate — worth testing", not "you are weak here".
+
+#### Step 10 — Strengths
+
+The mirror of Step 8: metrics whose grade-equivalent sits well above the
+ceiling. Useful because it reframes the training implication correctly —
+"your pulling is two grades ahead of your fingers" is an argument for training
+fingers, not for being pleased about pulling. Surface at most two, and only
+when at least one weakness is also shown, so the screen does not become
+congratulatory.
+
+#### Data model additions
+
+- `MetricDef.trainingAdvice: String` — one or two sentences on what actually
+  moves this metric. Per-metric, written alongside the existing `safetyNote`
+  and subject to the same rule: no product names, no real climbers.
+- `MetricDef.trainability: Trainability { fast, moderate, slow }` — finger
+  strength responds over months and carries injury risk; body composition and
+  mobility move faster. Does not reorder the ranking, but annotates it, so a
+  0.4-grade gain available in weeks reads differently from a 0.6-grade gain
+  that takes a season.
+- `WeaknessFinding { metricId, gainGrades, kind: bottleneck | drag | unknown
+  | strength }` — computed in the assessment pipeline, not in the widget, and
+  stored on `Assessment` beside `limitingFactors` so history can show how the
+  weakness list changed over time.
+
+`limitingFactors` is superseded by this and should be removed once the new
+field is populated, rather than left alongside it producing a second, quieter,
+wronger answer. Note that stored assessments carry `limitingFactors`, so
+removing it needs the same tolerant-read treatment described in the README.
+
+#### UI placement
+
+On the Results screen, immediately after the grade block (`_GradeHeader` and
+`_CeilingVsExperience`) and before the profile radar. Order within the
+section: weaknesses, then unknowns, then strengths.
+
+Each weakness card states the metric, the counterfactual gain phrased as an
+estimate ("about 1.4 grades"), and one line of training advice. The gain is
+the headline number — it is the only figure on the screen that answers "what
+should I do next".
+
+#### Caveats
+
+- The counterfactual assumes metrics are independent. They are not: finger
+  strength and min edge share most of their variance, so "fix min edge" and
+  "fix finger strength" are not two separate grades of upside.
+- `gain_i` is a property of the model, not a measured training outcome. It
+  inherits every assumption in the scoring constants, all of which are
+  currently tuned guesses.
+- Both of the above argue for phrasing gains as approximate throughout, and
+  against ever showing a decimal place beyond the first.
+
 ### App Design / UX
 
 **Screen structure**

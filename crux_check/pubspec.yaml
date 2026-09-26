@@ -56,6 +56,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -98,3 +99,19 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Launcher icons. Regenerate after changing anything in assets/icon/ with:
+#   dart run flutter_launcher_icons
+#
+# The source art is reframed from the original logo by a script (see README):
+# it arrived 4:3 with the climber filling under a third of the frame, which
+# would have been a speck at 48dp. The adaptive foreground is deliberately
+# smaller than the legacy icon because Android masks the outer third away.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  remove_alpha_ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#F2DFBE"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  min_sdk_android: 21

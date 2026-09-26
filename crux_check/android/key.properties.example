@@ -1,0 +1,14 @@
+# Copy this to `key.properties` (same folder) and fill in your real values.
+#
+# `key.properties` is gitignored and must stay that way — it holds the
+# passwords to your upload key in plain text. This .example file is the only
+# one that gets committed.
+#
+# storeFile must be an ABSOLUTE path. Gradle resolves relative paths here
+# against android/app/, which is almost never what you meant, and keeping the
+# keystore outside the repo means a stray `git add -A` cannot commit it.
+
+storePassword=your-keystore-password
+keyPassword=your-key-password
+keyAlias=upload
+storeFile=/home/jason-mann/crux-upload.jks

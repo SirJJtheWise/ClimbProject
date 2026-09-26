@@ -9,11 +9,6 @@ import '../models/enums.dart';
 class ScoringEngine {
   ScoringEngine._();
 
-  /// Body mass the %BW benchmark curves in [Benchmarks] are taken to be
-  /// calibrated at. Only the *deviation* from this mass is corrected, so the
-  /// curves stay valid as written.
-  static const double referenceMassKg = 70;
-
   /// Softmin temperature. Picked so the canonical bottleneck profile — V12
   /// pulling, V12 contact strength, V4 fingers — resolves to about V4.3
   /// instead of the ~V9.3 a weighted mean reports.
@@ -23,22 +18,6 @@ class ScoringEngine {
   /// be negative (assisted / removed weight).
   static double pctBWFromLoad(double bodyWeightKg, double addedLoadKg) {
     return (bodyWeightKg + addedLoadKg) / bodyWeightKg * 100;
-  }
-
-  /// Corrects a %BW figure for body size.
-  ///
-  /// Muscle force scales with cross-sectional area (~m^0.67) while %BW
-  /// divides by m^1, so a raw %BW number systematically flatters lighter
-  /// climbers and penalises heavier ones. Since S ∝ F/m^0.67 and F ∝ m·pctBW,
-  /// the size-independent index is proportional to pctBW·m^0.33.
-  ///
-  /// Expressed here as "the %BW an equally strong [referenceMassKg] climber
-  /// would show", which applies the correction without invalidating the
-  /// existing %BW-denominated benchmark curves. Returns [pctBW] unchanged
-  /// when bodyweight is unknown.
-  static double allometricPctBW(double pctBW, double bodyMassKg) {
-    if (bodyMassKg <= 0) return pctBW;
-    return pctBW * math.pow(bodyMassKg / referenceMassKg, 0.33).toDouble();
   }
 
   /// Weighted Softmin ("smooth minimum") over grade-equivalents.

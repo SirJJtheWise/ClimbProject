@@ -178,7 +178,6 @@ class AppState extends ChangeNotifier {
       user: user!,
       rawValues: rawValues,
       lowConfidenceMetricIds: lowConfidence,
-      bodyWeightKg: latestBody?.weightKg ?? 0,
     );
   }
 

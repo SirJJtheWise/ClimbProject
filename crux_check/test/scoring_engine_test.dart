@@ -157,24 +157,6 @@ void main() {
     });
   });
 
-  group('allometricPctBW', () {
-    test('is a no-op at the reference mass', () {
-      expect(
-        ScoringEngine.allometricPctBW(150, ScoringEngine.referenceMassKg),
-        closeTo(150, 0.001),
-      );
-    });
-
-    test('credits a heavier climber and discounts a lighter one', () {
-      expect(ScoringEngine.allometricPctBW(170, 85), greaterThan(170));
-      expect(ScoringEngine.allometricPctBW(170, 55), lessThan(170));
-    });
-
-    test('passes through unchanged when bodyweight is unknown', () {
-      expect(ScoringEngine.allometricPctBW(170, 0), 170);
-    });
-  });
-
   group('plateauPullingGrade', () {
     test('is linear up to the plateau', () {
       expect(ScoringEngine.plateauPullingGrade(8), 8);
@@ -319,7 +301,6 @@ void main() {
           AssessmentCalculator.compute(
             user: AppUser(sex: Sex.male, heightCm: 178, armSpanCm: armSpanCm),
             rawValues: {MetricId.fingerStrength: 170},
-            bodyWeightKg: ScoringEngine.referenceMassKg,
           );
       final short = forSpan(168); // -10 cm
       final long = forSpan(193); // +15 cm
@@ -348,7 +329,6 @@ void main() {
           MetricId.pullingStrength: Benchmarks.pullUpCurveFor(Sex.male, 12),
           MetricId.rfdContact: 6, // elite campus
         },
-        bodyWeightKg: ScoringEngine.referenceMassKg,
       );
       // Averaging put this profile near V7. The bottleneck is the fingers.
       expect(result.assessment.gradeCeiling, lessThan(5));
@@ -358,20 +338,6 @@ void main() {
       );
     });
 
-    test('body size is corrected before the %BW curve is read', () {
-      final user = AppUser(sex: Sex.male, heightCm: 178, armSpanCm: 182);
-      AssessmentResult at(double kg) => AssessmentCalculator.compute(
-        user: user,
-        rawValues: {MetricId.fingerStrength: 170},
-        bodyWeightKg: kg,
-      );
-      // Identical %BW, different mass: strength scales with cross-section,
-      // not volume, so the heavier climber is the stronger one.
-      expect(at(85).anchorGrade, greaterThan(at(70).anchorGrade));
-      expect(at(55).anchorGrade, lessThan(at(70).anchorGrade));
-      expect(at(0).anchorGrade, closeTo(at(70).anchorGrade, 0.001));
-    });
-
     test(
       'display percentiles are population-relative, not anchor-relative',
       () {
@@ -379,7 +345,6 @@ void main() {
         final result = AssessmentCalculator.compute(
           user: user,
           rawValues: {MetricId.fingerStrength: 189, MetricId.core: 6},
-          bodyWeightKg: ScoringEngine.referenceMassKg,
         );
         final core = result.assessment.perMetricPercentiles.firstWhere(
           (p) => p.metricId == MetricId.core,

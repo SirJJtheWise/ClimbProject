@@ -97,9 +97,6 @@ class LiveGradePreview extends StatelessWidget {
             child: MetricRadarChart(
               axes: axes,
               color: scheme.onPrimaryContainer,
-              // Unlabelled at this size — it reads as "the shape of you",
-              // and the labelled version lives on the Results tab.
-              showLabels: false,
             ),
           );
           final summary = _Summary(preview: preview!, gradeScale: gradeScale);

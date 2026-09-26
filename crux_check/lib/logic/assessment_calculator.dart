@@ -68,7 +68,6 @@ class AssessmentCalculator {
     required AppUser user,
     required Map<MetricId, double> rawValues,
     Set<MetricId> lowConfidenceMetricIds = const {},
-    double bodyWeightKg = 0,
   }) {
     final sex = user.sex;
 
@@ -81,17 +80,6 @@ class AssessmentCalculator {
     final hasScorableInput = effectiveRaw.keys.any(
       (id) => !_unscoredMetrics.contains(id),
     );
-
-    // Size-correct the two force anchors before they meet the %BW curves.
-    for (final id in const [
-      MetricId.fingerStrength,
-      MetricId.pullingStrength,
-    ]) {
-      final raw = effectiveRaw[id];
-      if (raw != null) {
-        effectiveRaw[id] = ScoringEngine.allometricPctBW(raw, bodyWeightKg);
-      }
-    }
 
     // --- Anchor grade (finger strength is primary; pulling is fallback) ---
     double anchorGrade;

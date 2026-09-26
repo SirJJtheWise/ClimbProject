@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#F2DFBE</color>
+    <!-- Matches AppTheme.cream so a cold start does not flash white
+         before the first frame. -->
+    <color name="launch_background">#FAF6EC</color>
+</resources>

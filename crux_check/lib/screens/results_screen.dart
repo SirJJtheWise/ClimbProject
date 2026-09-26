@@ -479,10 +479,16 @@ class _LimiterCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Your physical ceiling is '
-                    '${context.grade(assessment.gradeCeiling)} — '
-                    '${def.shortName.toLowerCase()} is holding you back by '
-                    'about ${factor.deficit.toStringAsFixed(1)} grades.',
+                    // Says what the number is rather than what we wish it
+                    // were: `deficit` is the gap to your average result, not
+                    // the grades you would gain by fixing this. Under a
+                    // Softmin those differ a lot (see Weakness Analysis in
+                    // the spec). Also keeps the metric name cased — lowercasing
+                    // turned "RFD / contact" into "rfd / contact".
+                    '${def.shortName} is about '
+                    '${factor.deficit.toStringAsFixed(1)} grades below your '
+                    'average result. Your physical ceiling is '
+                    '${context.grade(assessment.gradeCeiling)}.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurface,
                     ),

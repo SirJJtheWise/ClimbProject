@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the dark ColorScheme's surface, so the cold start does not
+         flash cream at someone using the app in a dark gym. -->
+    <color name="launch_background">#12160F</color>
+</resources>
