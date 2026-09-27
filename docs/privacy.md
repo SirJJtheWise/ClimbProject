@@ -4,13 +4,15 @@ title: Privacy Policy — Crux Check
 
 # Privacy Policy — Crux Check
 
-**Last updated: 18 September 2026**
+**Last updated: 26 September 2026**
 
 ## The short version
 
 Crux Check does not collect anything. There are no accounts, no servers, no
 analytics and no advertising. Everything you enter stays in the app's private
-storage on your own device.
+storage on your own device — the only copy that ever leaves it is Android's
+own backup to your own Google Drive, which you control and the developer
+cannot read.
 
 ## What the app stores, and where
 
@@ -23,8 +25,10 @@ Crux Check asks you for information in order to estimate a climbing grade:
 - Your preferences and the date you accepted the safety notice
 
 All of it is written to a database inside the app's own private storage on your
-device. None of it is transmitted anywhere. The developer cannot see it and has
-no way to request it.
+device. The developer never receives it, cannot see it, and has no way to
+request it. There is no Crux Check server for it to go to.
+
+The one exception is Android's own backup, described below.
 
 ## What the app does not do
 
@@ -42,15 +46,28 @@ screen, which opens a third-party donation page in your browser. Crux Check
 sends nothing with that link. If you follow it, that site's own privacy policy
 applies to whatever happens there, and any payment is handled entirely by them.
 
+## Android backup
+
+Android backs up app data automatically on most phones, and Crux Check leaves
+that enabled. Your database may therefore be copied to **your own Google
+Drive**, so that a new phone can restore your history.
+
+That backup belongs to you, not to the developer. It sits in your Google
+account, is covered by Google's terms and privacy policy rather than this one,
+and the developer has no access to it and no way to read it. You can turn it
+off for this app, or for all apps, in your phone's Settings under System →
+Backup.
+
 ## Deleting your data
 
-Uninstalling Crux Check deletes its database along with it. You can also clear
-everything from inside the app, under the profile menu, without uninstalling.
-Because nothing is sent anywhere, there is no copy left behind for anyone to
-delete.
+Uninstalling Crux Check removes the database from your device. You can also
+clear everything from inside the app, under the profile menu, without
+uninstalling.
 
-Note that this also means there is **no backup**. If you uninstall the app or
-reset your device, your recorded history is gone.
+If Android backup is on, a copy may remain in your Google Drive after you
+uninstall, and reinstalling can restore it. To remove that copy too, delete
+the app's backup from your Google account, or turn backup off before you
+uninstall.
 
 ## Children
 

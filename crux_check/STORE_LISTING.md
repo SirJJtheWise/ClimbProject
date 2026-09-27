@@ -45,7 +45,7 @@ WHAT YOU GET
 • History, so you can see whether a training block actually moved anything
 
 HOW IT ESTIMATES
-Finger strength anchors everything: it is the strongest single predictor of bouldering grade in the published data. Results are corrected for body size, because muscular strength scales with cross-section rather than with bodyweight, and raw %BW quietly flatters lighter climbers.
+Finger strength anchors everything: it is the strongest single predictor of bouldering grade in the published data. Every result is expressed as a percentage of your bodyweight and read against published benchmarks for each grade.
 
 The metrics are not averaged together. Climbing is limited by its weakest link — elite pulling cannot be applied to a hold your fingers will not hold — so a smooth-minimum model lets your weakest result cap the estimate instead of being averaged away by your strongest. That is what makes the limiter list worth reading.
 
@@ -53,9 +53,9 @@ WHAT THIS IS NOT
 The estimate is a statistical guess built from published benchmark data and approximate models. It describes what your physical profile resembles. It is not a measurement of what you can climb, and it knows nothing about technique, tactics or head game — frequently the actual gap.
 
 PRIVATE BY DEFAULT
-No account. No servers. No analytics. No ads. No permissions requested. Everything you record stays in the app's private storage on your own phone, and uninstalling deletes it. You can also wipe everything from inside the app at any time.
+No account. No servers. No analytics. No ads. No permissions requested. Everything you record stays in the app's private storage on your own phone, and you can wipe it all from inside the app at any time. There is no Crux Check server for it to go to, and the developer never sees any of it.
 
-Because nothing is stored anywhere else, there is no backup: a reinstall loses your history.
+Android's own backup is left on, so your history can follow you to a new phone via your own Google Drive. That backup is yours — it lives in your Google account and the developer has no access to it.
 
 WHAT YOU NEED
 A hangboard with a 20 mm edge is essential, and a range of smaller edges helps. Some tests also want a pull-up bar, a way to add or remove load, and a campus or benchmark board. Any test you have no kit for can simply be left blank.
@@ -87,6 +87,15 @@ Every answer is **no**. The app collects and shares nothing, has no account,
 makes no network requests of its own, and requests no Android permissions.
 The only outbound traffic is the optional tip-jar link, which opens the
 system browser and sends nothing with it.
+
+Android Auto Backup is left enabled, so the database can be copied to the
+user's own Google Drive. Play's guidance does not name Auto Backup directly,
+but it does exempt data the user uploads "directly to their own external
+drive or cloud storage account ... and your app never collects or accesses
+the data in question". Auto Backup fits that description, so "no" still looks
+right — this is an inference from an adjacent exemption rather than an
+explicit ruling, and setting `android:allowBackup="false"` would remove the
+question entirely if you would rather not rely on it.
 
 ### Content rating questionnaire
 

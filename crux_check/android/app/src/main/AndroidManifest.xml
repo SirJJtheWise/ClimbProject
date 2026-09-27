@@ -1,6 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- allowBackup is declared rather than left to the platform default,
+         which is also true. Android Auto Backup copies the database to the
+         user's own Google Drive, so a new phone keeps their test history —
+         the one real weakness of storing everything locally. It is their
+         account, encrypted, and the developer cannot read it. Turning it off
+         would make "nothing ever leaves the device" literally true, at the
+         cost of losing people's data on every device change.
+         If this is ever changed, docs/privacy.md must change with it. -->
     <application
         android:label="Crux Check"
+        android:allowBackup="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -18,7 +18,7 @@ if (hasKeystore) {
 }
 
 android {
-    namespace = "com.emobilio.crux_check"
+    namespace = "io.github.sirjjthewise.cruxcheck"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -28,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.emobilio.crux_check"
+        applicationId = "io.github.sirjjthewise.cruxcheck"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
